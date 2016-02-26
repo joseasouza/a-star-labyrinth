@@ -20,3 +20,11 @@
 .labirinto-canvas {
     margin-top: 10px;
 }
+
+.app-container .content-container .side-menu:hover .navbar-nav li a .title {
+    display: block;
+}
+
+.expanded .content-container .side-menu:hover .navbar-nav li a .title {
+    display: inline-block;
+}
