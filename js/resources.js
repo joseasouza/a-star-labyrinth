@@ -50,7 +50,11 @@
     }
 
     function onReady(func) {
-        readyCallbacks.push(func);
+        if (isReady()) {
+            func();
+        } else {
+            readyCallbacks.push(func);
+        }
     }
 
     window.resources = { 

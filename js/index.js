@@ -27,8 +27,12 @@
  */
 $(document).ready(function() {
     var game;
+    var aStar;
 
     $('#fileUpload').change(function(e) {
+        if (game != null) {
+            game.stop();
+        }
         var file = this.files[0];
         var textType = /text.*/;
 
@@ -38,7 +42,21 @@ $(document).ready(function() {
                 $("#fileUpload").val("");
                 $("li.dropdown.profile").removeClass("open");
                 var lab = labyrinthFromFile(reader.result);
-                game = new Game(lab);
+                var costs = {};
+                costs[TypeMovement.VERTICAL] = 1;
+                costs[TypeMovement.HORIZONTAL] = 1;
+                costs[TypeMovement.DIAGONAL] = 1.44;
+
+                var configs = {
+                    start : lab.start,
+                    goal: lab.goal,
+                    map: lab.map,
+                    costs: costs
+                };
+
+                aStar = new AStarAlgorithm(configs);
+
+                game = new Game(lab, aStar);
             };
             reader.readAsText(file);
         }
@@ -62,16 +80,17 @@ $(document).ready(function() {
             row = linesFile[i].split(" ");
             iRow = i-1;
             rowMap = [];
+            if (row.length != colCount) continue;
             $.each(row, function(iCol, value) {
                 tipo = TypePosition.array[Number(value)];
                 var square = new PositionSquare(iRow, iCol, tipo);
                 rowMap.push(square);
 
                 if (tipo == TypePosition.START) {
-                    start = square.center;
+                    start = square;
                 }
                 if (tipo == TypePosition.GOAL) {
-                    goal = square.center;
+                    goal = square;
                 }
 
             });

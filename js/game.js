@@ -24,12 +24,16 @@
  * @param labyrinth a instance of {@link Labyrinth}
  * @constructor it initializes the Game
  */
-var Game = function(labyrinth) {
+var Game = function(labyrinth, aStar) {
     var canvas = document.getElementById("canvas");
     var ctx = canvas.getContext("2d");
     var gameTime = 0;
     var playerSpeed = 130;
     var texture;
+
+    this.stop = function() {
+        main = function() {};
+    };
 
     var requestAnimFrame = (function () {
         return window.requestAnimationFrame ||
@@ -52,6 +56,7 @@ var Game = function(labyrinth) {
         render();
 
         lastTime = now;
+
         requestAnimFrame(main);
     };
 
@@ -64,30 +69,52 @@ var Game = function(labyrinth) {
     var player = new Player(labyrinth.start);
     var goal = new Goal(labyrinth.goal);
 
-    function handleInput(dt) {
-        if (input.isDown('DOWN') || input.isDown('s')) {
-            player.pos[1] += playerSpeed * dt;
-        }
-
-        if (input.isDown('UP') || input.isDown('w')) {
-            player.pos[1] -= playerSpeed * dt;
-        }
-
-        if (input.isDown('LEFT') || input.isDown('a')) {
-            player.pos[0] -= playerSpeed * dt;
-        }
-
-        if (input.isDown('RIGHT') || input.isDown('d')) {
-            player.pos[0] += playerSpeed * dt;
-        }
-
-    }
-
+    var gameMove = new GameMove(labyrinth.start);
     function update(dt) {
         gameTime += dt;
-        handleInput(dt);
+        updatePlayer(dt);
         player.sprite.update(dt);
         goal.sprite.update(dt);
+    }
+
+    function updatePlayer(dt) {
+        if (checkIfPlayerIsOnSquare()) {
+            player.actualSquare = gameMove.squareTo;
+            var newSquare = aStar.next();
+            gameMove = new GameMove(newSquare.center);
+        }
+        movePlayer(dt);
+    }
+
+    function checkIfPlayerIsOnSquare() {
+        if (player.localPosition[0] > gameMove.squareTo.center[0] - DimensionSquare/10
+            && player.localPosition[0] < gameMove.squareTo.center[0] + DimensionSquare/10
+            && player.localPosition[1] > gameMove.squareTo.center[1] - DimensionSquare/10
+            && player.localPosition[1] < gameMove.squareTo.center[1] + DimensionSquare/10) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    function movePlayer(dt) {
+        var x = player.pos[0];
+        var y = player.pos[1];
+
+        if (player.localPosition[0] < gameMove.squareTo.center[0]) {
+            x += dt*playerSpeed;
+        } else {
+            x -= dt*playerSpeed;
+        }
+
+        if (player.localPosition[1] < gameMove.squareTo.center[1]) {
+            y += dt*playerSpeed;
+        } else {
+            y -= dt*playerSpeed;
+        }
+
+        player.updatePosition([x, y]);
+
     }
 
     var opts = {
@@ -136,6 +163,10 @@ var Game = function(labyrinth) {
             }
         }
     }
+
+    var GameMove = function(squareTo) {
+        this.squareTo = squareTo;
+    };
 
 
     resources.load([
