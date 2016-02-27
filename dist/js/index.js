@@ -1,111 +1,83 @@
+
+/*
+ * The MIT License (MIT)
+ * Copyright© fev/2016 - José Victor Alves de Souza - https://github.com/dudevictor
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this
+ * software and associated documentation files (the "Software"), to deal in the Software
+ * without restriction, including without limitation the rights to use, copy, modify, merge,
+ *  publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to
+ *   whom the Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all copies or
+ *  substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+ * OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
+ * OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
 /**
- * Created by victor on 23/02/16.
+ * Contains general scripts for the index.html page
+ * @author dudevictor.github.io
  */
 $(document).ready(function() {
+    var game;
 
-    var canvas = document.getElementById("canvas");
-    var ctx = canvas.getContext("2d");
-    var textura;
+    $('#fileUpload').change(function(e) {
+        var file = this.files[0];
+        var textType = /text.*/;
 
-    var requestAnimFrame = (function(){
-        return window.requestAnimationFrame       ||
-            window.webkitRequestAnimationFrame ||
-            window.mozRequestAnimationFrame    ||
-            window.oRequestAnimationFrame      ||
-            window.msRequestAnimationFrame     ||
-            function(callback){
-                window.setTimeout(callback, 1000 / 60);
+        if (file.type.match(textType)) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                $("#fileUpload").val("");
+                $("li.dropdown.profile").removeClass("open");
+                var lab = labyrinthFromFile(reader.result);
+                game = new Game(lab);
             };
-    })();
+            reader.readAsText(file);
+        }
 
-    var lastTime;
-    function main() {
-        var now = Date.now();
-        var dt = (now - lastTime) / 1000.0;
+    });
 
-        atualizar(dt);
-        renderizar();
+    function labyrinthFromFile(result) {
+        var linesFile = result.split("\n");
+        var firstLine = linesFile[0].split(" ");
 
-        lastTime = now;
-        requestAnimFrame(main);
-    };
+        var rowCount = Number(firstLine[0]);
+        var colCount = Number(firstLine[1]);
+        var horCost = Number(firstLine[2]);
+        var verCost = Number(firstLine[3]);
+        var start = [];
+        var goal = [];
+        var map = [];
 
-    function iniciar() {
-        textura = ctx.createPattern(resources.get('assets/textura.png'), 'repeat');
-        lastTime = Date.now();
-        main();
+        var row, iRow, rowMap, type, square;
+        for (var i = 1; i < linesFile.length; i++) {
+            row = linesFile[i].split(" ");
+            iRow = i-1;
+            rowMap = [];
+            $.each(row, function(iCol, value) {
+                tipo = TypePosition.array[Number(value)];
+                var square = new PositionSquare(iRow, iCol, tipo);
+                rowMap.push(square);
+
+                if (tipo == TypePosition.START) {
+                    start = square.center;
+                }
+                if (tipo == TypePosition.GOAL) {
+                    goal = square.center;
+                }
+
+            });
+            map.push(rowMap);
+        }
+
+        return new Labyrinth(rowCount, colCount, horCost, verCost, map, start, goal);
     }
-
-    var pers = {
-        pos: [50, 63],
-        sprite: new Sprite('assets/right.png', [0, 0], [56, 68], 9, [0, 1, 2, 3, 4, 5])
-    };
-
-    var goal = {
-        pos: [1160, 455],
-        sprite: new Sprite('assets/portal.png', [0, 0], [30, 31], 10, [0, 1, 2])
-    }
-
-    var gameTime = 0;
-    var playerSpeed = 130;
-
-    function atualizar(dt) {
-        gameTime += dt;
-
-        pers.sprite.update(dt);
-        goal.sprite.update(dt);
-    }
-
-    var opts = {
-        distance : 50,
-        lineWidth : 0.2,
-        gridColor : "#000000",
-        caption : false,
-        horizontalLines : true,
-        verticalLines : true
-    };
-
-    var grid = new Grid(opts);
-    function renderizar() {
-        ctx.fillStyle = textura;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        grid.draw(ctx);
-
-
-        ctx.save();
-        ctx.drawImage(resources.get("assets/Shrub.gif"), 55, 50, 40, 40);
-        ctx.restore();
-
-        ctx.save();
-        ctx.drawImage(resources.get("assets/Shrub.gif"), 105, 100, 40, 40);
-        ctx.restore();
-
-        ctx.save();
-        ctx.translate(pers.pos[0], pers.pos[1]);
-        pers.sprite.render(ctx);
-        ctx.restore();
-
-        ctx.save();
-        ctx.translate(goal.pos[0], goal.pos[1]);
-        goal.sprite.render(ctx);
-        ctx.restore();
-    }
-
-    resources.load([
-        'assets/textura.png',
-        'assets/Shrub.gif',
-        "assets/personagem.gif",
-        "assets/left.png",
-        "assets/right.png",
-        "assets/baixo.png",
-        "assets/cima.png",
-        "assets/portal.png",
-        "assets/Shrub.gif",
-        "assets/sprites.png",
-    ]);
-    resources.onReady(iniciar);
-
-
 });
-
