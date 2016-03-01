@@ -25,11 +25,16 @@
  * @constructor it initializes the Game
  */
 var Game = function(labyrinth, aStar) {
+
     var canvas = document.getElementById("canvas");
     var ctx = canvas.getContext("2d");
     var gameTime = 0;
-    var playerSpeed = 130;
+    var playerSpeed = 10;
     var texture;
+
+    var GameMove = function(squareTo) {
+        this.squareTo = squareTo;
+    };
 
     this.stop = function() {
         main = function() {};
@@ -81,33 +86,34 @@ var Game = function(labyrinth, aStar) {
         if (checkIfPlayerIsOnSquare()) {
             player.actualSquare = gameMove.squareTo;
             var newSquare = aStar.next();
-            gameMove = new GameMove(newSquare.center);
+            gameMove = new GameMove(newSquare);
         }
         movePlayer(dt);
     }
 
     function checkIfPlayerIsOnSquare() {
-        if (player.localPosition[0] > gameMove.squareTo.center[0] - DimensionSquare/10
-            && player.localPosition[0] < gameMove.squareTo.center[0] + DimensionSquare/10
-            && player.localPosition[1] > gameMove.squareTo.center[1] - DimensionSquare/10
-            && player.localPosition[1] < gameMove.squareTo.center[1] + DimensionSquare/10) {
+        if (player.refPoint[0] < gameMove.squareTo.center[0] + DimensionSquare/10
+            && player.refPoint[0] > gameMove.squareTo.center[0] - DimensionSquare/10
+            && player.refPoint[1] < gameMove.squareTo.center[1] + DimensionSquare/10
+            && player.refPoint[1] > gameMove.squareTo.center[1] - DimensionSquare/10) {
             return true;
         } else {
             return false;
         }
+
     }
 
     function movePlayer(dt) {
         var x = player.pos[0];
         var y = player.pos[1];
 
-        if (player.localPosition[0] < gameMove.squareTo.center[0]) {
+        if (player.refPoint[0] < gameMove.squareTo.center[0]) {
             x += dt*playerSpeed;
         } else {
             x -= dt*playerSpeed;
         }
 
-        if (player.localPosition[1] < gameMove.squareTo.center[1]) {
+        if (player.refPoint[1] < gameMove.squareTo.center[1]) {
             y += dt*playerSpeed;
         } else {
             y -= dt*playerSpeed;
@@ -138,12 +144,36 @@ var Game = function(labyrinth, aStar) {
        renderMap();
 
         ctx.save();
-        ctx.translate(player.pos[0] - player.sprite.size[0]/2, player.pos[1] - player.sprite.size[1] + 8);
+        ctx.translate(player.translate[0], player.translate[1]);
         player.sprite.render(ctx);
         ctx.restore();
 
         ctx.save();
-        ctx.translate(goal.pos[0] - goal.sprite.size[0]/2, goal.pos[1] - goal.sprite.size[1]/2);
+        ctx.translate(player.pos[0], player.pos[1]);
+        ctx.fillStyle = "rgb(255, 255, 255)";
+        ctx.fillRect(0,0,10,10);
+        ctx.restore();
+
+        ctx.save();
+        ctx.translate(player.translate[0], player.translate[1]);
+        ctx.fillStyle = "rgb(0, 0, 0)";
+        ctx.fillRect(0,0,10,10);
+        ctx.restore();
+
+        ctx.save();
+        ctx.translate(gameMove.squareTo.center[0] - 5, gameMove.squareTo.center[1] - 5);
+        ctx.fillStyle = "rgb(128, 128, 128)";
+        ctx.fillRect(0,0,10,10);
+        ctx.restore();
+
+        ctx.save();
+        ctx.translate(player.refPoint[0], player.refPoint[1]);
+        ctx.fillStyle = "rgb(255, 0, 0)";
+        ctx.fillRect(0,0,10,10);
+        ctx.restore();
+
+        ctx.save();
+        ctx.translate(goal.translate[0], goal.translate[1]);
         goal.sprite.render(ctx);
         ctx.restore();
     }
@@ -163,11 +193,6 @@ var Game = function(labyrinth, aStar) {
             }
         }
     }
-
-    var GameMove = function(squareTo) {
-        this.squareTo = squareTo;
-    };
-
 
     resources.load([
         'assets/textura.png',

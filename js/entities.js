@@ -62,18 +62,38 @@ var PositionSquare = function(iRow, iCol, type) {
         }
         return true;
     };
+    this.generateIdentifier = function() {
+        return this.index.toString().replace(",", "");
+    }
 };
 
+/**
+ * Function that defines a Player
+ * @param start this is the actual square {@link PositionSquare} that our player is located.
+ *        It is just updated when the player stay on top of the new square
+ *
+ * this.pos = It is an array [x y] that defines the position of drawing
+ * this.sprite = Define the sprite object {@link Sprite} of the player
+ * this.translate = It is an array [x y] that defines how much have to deslocate to start drawing at canvas
+ * this.refPoint = It in an array[x y] that defines where is the player is located on the scene
+ *                  (it points to the foot of the character)
+ * this.actualSquare it defines the actual {@link PositionSquare} the player is located
+ * this.updatePosition(newPosition) = the param new Position is the new value of this.pos. This function updates
+ *                          the values of refPoint and translate based on this new value.
+ */
 var Player = function(start) {
-    this.pos = null;
     this.sprite = new Sprite('assets/right.png', [0, 0], [56, 68], 9, [0, 1, 2, 3, 4, 5]);
-    this.localPosition = null;
+    this.refPoint = start.center;
+    this.pos = [this.refPoint[0] - this.sprite.size[0]/2, this.refPoint[1] - this.sprite.size[1]];
+    this.translate = [Math.abs(DimensionSquare/2 - this.sprite.size[0]/2)+ this.pos[0],
+        Math.abs(DimensionSquare/2 - this.sprite.size[1]/2) + this.pos[1]];
     this.actualSquare = start;
     this.updatePosition = function(newPosition) {
         this.pos = newPosition;
-        this.localPosition = [this.pos[0] - this.sprite.size[0]/2, this.pos[1] - this.sprite.size[1] + 8];
+        this.translate = [Math.abs(DimensionSquare/2 - this.sprite.size[0]/2)+ this.pos[0],
+                        Math.abs(DimensionSquare/2 - this.sprite.size[1]/2) + this.pos[1]];
+        this.refPoint = [this.pos[0] + this.sprite.size[0]/2, this.pos[1] + this.sprite.size[1]];
     };
-    this.updatePosition(start.pos);
 };
 
 /*new Sprite('assets/comemorar.png', [0, 0], [36, 72], 2, [0, 1]);*/
@@ -81,8 +101,10 @@ var Player = function(start) {
 /*new Sprite('assets/left.png', [0, 0], [56, 68], 9, [0, 1, 2, 3, 4, 5]); */
 
 var Goal = function(goal) {
-    this.pos = goal;
+    this.pos = goal.pos;
     this.sprite = new Sprite('assets/portal.png', [0, 0], [30, 31], 10, [0, 1, 2]);
+    this.translate = [Math.abs(DimensionSquare/2 - this.sprite.size[0]/2)+ this.pos[0],
+                      Math.abs(DimensionSquare/2 - this.sprite.size[1]/2) + this.pos[1]]
 };
 
 var TypeMovement = {
@@ -90,8 +112,8 @@ var TypeMovement = {
     VERTICAL : "VER",
     DIAGONAL : "DIA",
     identifyDirection : function(squareFrom, squareTo) {
-        if (squareTo.index[0] = squareFrom.index[0]) return this.VERTICAL;
-        else if (squareTo.index[1] = squareFrom.index[1]) return this.HORIZONTAL;
+        if (squareTo.index[0] == squareFrom.index[0]) return this.VERTICAL;
+        else if (squareTo.index[1] == squareFrom.index[1]) return this.HORIZONTAL;
         else return this.DIAGONAL;
     }
 };

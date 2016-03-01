@@ -22,8 +22,10 @@
 
 var AStarAlgorithm = function(config) {
 
-    var open =  new PriorityQueue({ comparator: function(a, b) { return b.cost - a.cost; }});
-    var cameFrom = {};
+    var open =  new PriorityQueue({ comparator: function(a, b) {
+        return a.priority - b.priority; }
+    });
+    var cameFrom = [];
 
 
     var start = config.start;
@@ -31,26 +33,17 @@ var AStarAlgorithm = function(config) {
     var map = config.map;
     var costs = config.costs;
 
-    var nextRequest = start;
 
     this.next = function() {
-        var next = null;
-        $.each(cameFrom, function(key, value) {
-           if (value.equals(nextRequest))  {
-               next = key;
-           }
-        });
-        nextRequest = next;
-        return next;
+       return cameFrom.pop();
     };
 
     function algorithm() {
-        var initialMove = new Move(start, null, 0);
+        var initialMove = new Move(start, 0);
         var cost_so_far = {};
 
         open.queue(initialMove);
-        cost_so_far[start] = 0;
-        cameFrom[start] = null;
+        cost_so_far[start.generateIdentifier()] = 0;
 
         while(open.length > 0) {
             var current = open.dequeue();
@@ -60,11 +53,12 @@ var AStarAlgorithm = function(config) {
             }
 
             $.each(findNeighbors(current.square), function(index, next) {
-                var newCost = current.cost + findCost(current.square, next);
-                if (cost_so_far[next] == null || newCost < cost_so_far[next]) {
-                    cost_so_far[next] = newCost + calculateDistanceToGoal(next);
-                    open.queue(new Move(next, cost_so_far[next]));
-                    cameFrom[next] = current.square;
+                var newCost = cost_so_far[current.square.generateIdentifier()] + findCost(current.square, next);
+                if (cost_so_far[next.generateIdentifier()] == null || newCost < cost_so_far[next.generateIdentifier()]) {
+                    cost_so_far[next.generateIdentifier()] = newCost;
+
+                    open.queue(new Move(next, newCost + calculateDistanceToGoal(next)));
+                    cameFrom.push(current.square);
                 }
             });
 
@@ -88,10 +82,10 @@ var AStarAlgorithm = function(config) {
     function findNeighbors(square) {
         var neighbors = [];
         for (var i = square.index[0] - 1; i <= square.index[0] + 1; i++) {
-            if (i >= 0 && i < map[0].length) {
+            if (i >= 0 && i < map.length) {
                 for (var j = square.index[1] - 1; j <= square.index[1] + 1; j++) {
-                    if (j >= 0 && j < map.length
-                        && square.type != TypePosition.BLOCKED
+                    if (j >= 0 && j < map[0].length
+                        && map[i][j].type != TypePosition.BLOCKED
                         && !square.equals(map[i][j])) {
                         neighbors.push(map[i][j]);
                     }
@@ -102,11 +96,12 @@ var AStarAlgorithm = function(config) {
 
     }
 
-    var Move = function(square, cost) {
+    var Move = function(square, priority) {
         this.square = square;
-        this.cost = cost;
+        this.priority = priority;
     };
 
-    cameFrom = algorithm();
+    cameFrom = [new PositionSquare(4, 2, TypePosition.ALLOWED), new PositionSquare(3, 1, TypePosition.ALLOWED),
+        new PositionSquare(2, 1, TypePosition.ALLOWED)]
 
 };
