@@ -24,13 +24,22 @@
  * @param labyrinth a instance of {@link Labyrinth}
  * @constructor it initializes the Game
  */
-var Game = function(labyrinth, aStar) {
+var Game = function(labyrinth, aStar, nameFile) {
 
     var canvas = document.getElementById("canvas");
     var ctx = canvas.getContext("2d");
     var gameTime = 0;
-    var playerSpeed = 10;
+    var playerSpeed = 150;
     var texture;
+    var blockList = {};
+    for (var i = 0; i < labyrinth.map.length; i++) {
+        for (var j = 0; j < labyrinth.map[0].length; j++) {
+            var square = labyrinth.map[i][j];
+            if (square.type == TypePosition.BLOCKED) {
+                blockList[square.generateIdentifier()] = square;
+            }
+        }
+    }
 
     var GameMove = function(squareTo) {
         this.squareTo = squareTo;
@@ -86,16 +95,20 @@ var Game = function(labyrinth, aStar) {
         if (checkIfPlayerIsOnSquare()) {
             player.actualSquare = gameMove.squareTo;
             var newSquare = aStar.next();
-            gameMove = new GameMove(newSquare);
+            if (newSquare != null) {
+                gameMove = new GameMove(newSquare);
+            } else {
+                endGame();
+            }
         }
         movePlayer(dt);
     }
 
     function checkIfPlayerIsOnSquare() {
-        if (player.refPoint[0] < gameMove.squareTo.center[0] + DimensionSquare/10
-            && player.refPoint[0] > gameMove.squareTo.center[0] - DimensionSquare/10
-            && player.refPoint[1] < gameMove.squareTo.center[1] + DimensionSquare/10
-            && player.refPoint[1] > gameMove.squareTo.center[1] - DimensionSquare/10) {
+        var x = Math.pow(player.pos[0] - gameMove.squareTo.center[0], 2);
+        var y = Math.pow(player.pos[1] - gameMove.squareTo.center[1], 2);
+        var result = Math.sqrt(x + y);
+        if (result == 0) {
             return true;
         } else {
             return false;
@@ -107,15 +120,19 @@ var Game = function(labyrinth, aStar) {
         var x = player.pos[0];
         var y = player.pos[1];
 
-        if (player.refPoint[0] < gameMove.squareTo.center[0]) {
+        if (Math.abs(x - gameMove.squareTo.center[0]) <= 2) {
+            x = gameMove.squareTo.center[0];
+        } else if (x < gameMove.squareTo.center[0]) {
             x += dt*playerSpeed;
-        } else {
+        } else if (x > gameMove.squareTo.center[0]) {
             x -= dt*playerSpeed;
         }
 
-        if (player.refPoint[1] < gameMove.squareTo.center[1]) {
+        if (Math.abs(y - gameMove.squareTo.center[1]) <= 2) {
+            y = gameMove.squareTo.center[1];
+        } else if (y < gameMove.squareTo.center[1]) {
             y += dt*playerSpeed;
-        } else {
+        } else if (y > gameMove.squareTo.center[1]) {
             y -= dt*playerSpeed;
         }
 
@@ -140,20 +157,25 @@ var Game = function(labyrinth, aStar) {
 
         grid.draw(ctx);
 
+        ctx.save();
+        ctx.translate(goal.translate[0], goal.translate[1]);
+        goal.sprite.render(ctx);
+        ctx.restore();
 
-       renderMap();
+       var blockListDown = renderMapUp();
 
         ctx.save();
         ctx.translate(player.translate[0], player.translate[1]);
         player.sprite.render(ctx);
         ctx.restore();
 
-        ctx.save();
-        ctx.translate(player.pos[0], player.pos[1]);
-        ctx.fillStyle = "rgb(255, 255, 255)";
-        ctx.fillRect(0,0,10,10);
-        ctx.restore();
+        renderMapDown(blockListDown);
 
+        //renderRefersPoint();
+
+    }
+
+    function renderRefersPoint() {
         ctx.save();
         ctx.translate(player.translate[0], player.translate[1]);
         ctx.fillStyle = "rgb(0, 0, 0)";
@@ -167,44 +189,62 @@ var Game = function(labyrinth, aStar) {
         ctx.restore();
 
         ctx.save();
-        ctx.translate(player.refPoint[0], player.refPoint[1]);
+        ctx.translate(player.pos[0] - 5, player.pos[1] - 5);
         ctx.fillStyle = "rgb(255, 0, 0)";
         ctx.fillRect(0,0,10,10);
         ctx.restore();
 
         ctx.save();
-        ctx.translate(goal.translate[0], goal.translate[1]);
-        goal.sprite.render(ctx);
+        ctx.fillStyle = "white";
+        ctx.font = "14px Cultive Mono";
+        ctx.fillText(nameFile, canvas.width - ctx.measureText(nameFile).width - 3, canvas.height - 24);
         ctx.restore();
     }
 
-    function renderMap() {
-        var map = labyrinth.map;
-        var square;
-        for (var i = 0; i < map.length; i++) {
-            for (var j = 0; j < map[0].length; j++) {
-                square = map[i][j];
-                if (square.type == TypePosition.BLOCKED) {
-                    ctx.save();
-                    ctx.translate(square.center[0] - (square.pos[0] + 20), square.center[1] - (square.pos[1] + 20));
-                    ctx.drawImage(resources.get(square.imgUrl), square.pos[0], square.pos[1], 40, 40);
-                    ctx.restore();
-                }
+    function renderMapUp() {
+        var blockListCopy = jQuery.extend(true, {}, blockList);
+        $.each(blockList, function(key, value) {
+            if (player.pos[1] > value.center[1]) {
+                ctx.save();
+                ctx.translate(value.translate[0], value.translate[1]);
+                ctx.drawImage(resources.get(value.imgUrl), 0, 0, DimensionBarrier, DimensionBarrier);
+                ctx.restore();
+                delete blockListCopy[key];
             }
+        });
+        return blockListCopy;
+    }
+
+    function renderMapDown(blockListDown) {
+        $.each(blockListDown, function(key, value) {
+            ctx.save();
+            ctx.translate(value.translate[0], value.translate[1]);
+            ctx.drawImage(resources.get(value.imgUrl), 0, 0, DimensionBarrier, DimensionBarrier);
+            ctx.restore();
+        });
+    }
+
+    function endGame() {
+        if (player.actualSquare.equals(goal.square)) {
+            player.updateSprite(PlayerSprites.VICTORY);
+        } else {
+            player.updateSprite(PlayerSprites.LOSE);
         }
+        movePlayer = function(){};
+        updatePlayer = function(){};
     }
 
     resources.load([
         'assets/textura.png',
-        'assets/Shrub.gif',
         "assets/personagem.gif",
         "assets/left.png",
         "assets/right.png",
         "assets/baixo.png",
         "assets/cima.png",
         "assets/portal.png",
-        "assets/Shrub.gif",
-        "assets/comemorar.png"
+        "assets/Shrub48.gif",
+        "assets/comemorar.png",
+        "assets/dead.gif"
     ]);
     resources.onReady(iniciar);
 

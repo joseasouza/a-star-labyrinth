@@ -29,6 +29,13 @@ $(document).ready(function() {
     var game;
     var aStar;
 
+    $(".card-body").slimScroll({
+        height: "100%"
+    });
+
+    var minCanvasWidth = $(".card-body").width();
+    var minCanvasHeight = $(".card-body").height();
+
     $('#fileUpload').change(function(e) {
         if (game != null) {
             game.stop();
@@ -45,7 +52,7 @@ $(document).ready(function() {
                 var costs = {};
                 costs[TypeMovement.VERTICAL] = 1;
                 costs[TypeMovement.HORIZONTAL] = 1;
-                costs[TypeMovement.DIAGONAL] = 1.44;
+                costs[TypeMovement.DIAGONAL] = 1;
 
                 var configs = {
                     start : lab.start,
@@ -56,7 +63,16 @@ $(document).ready(function() {
 
                 aStar = new AStarAlgorithm(configs);
 
-                game = new Game(lab, aStar);
+                var canvas = document.getElementById("canvas");
+                var canvasWidth = lab.colCount * 50;
+                var canvasHeight = lab.rowCount * 50;
+
+                if (minCanvasWidth > canvasWidth) canvasWidth = minCanvasWidth;
+                if (minCanvasHeight > canvasHeight) canvasHeight = minCanvasHeight;
+
+                canvas.width = canvasWidth;
+                canvas.height = canvasHeight;
+                game = new Game(lab, aStar, file.name);
             };
             reader.readAsText(file);
         }
@@ -82,7 +98,7 @@ $(document).ready(function() {
             rowMap = [];
             if (row.length != colCount) continue;
             $.each(row, function(iCol, value) {
-                tipo = TypePosition.array[Number(value)];
+                var tipo = TypePosition.array[Number(value)];
                 var square = new PositionSquare(iRow, iCol, tipo);
                 rowMap.push(square);
 

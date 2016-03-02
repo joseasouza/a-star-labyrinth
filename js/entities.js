@@ -46,13 +46,16 @@ var TypePosition = {
 };
 
 var DimensionSquare = 50;
+var DimensionBarrier = 56;
 
 var PositionSquare = function(iRow, iCol, type) {
     this.pos = [iCol * DimensionSquare, iRow * DimensionSquare];
     this.center = [this.pos[0] + DimensionSquare/2, this.pos[1] + DimensionSquare/2];
+    this.translate = [this.center[0] - DimensionBarrier/2, this.center[1] - DimensionBarrier/2];
     this.index = [iRow, iCol];
+    this.referPoint = [this.translate[0] + DimensionBarrier/2, this.translate[1] + DimensionBarrier];
     this.type = type;
-    this.imgUrl = "assets/Shrub.gif";
+    this.imgUrl = "assets/Shrub48.gif";
     this.equals  = function(otherSquare) {
         if (this.index === otherSquare.index) return true;
         if (this.index == null || otherSquare.index == null) return false;
@@ -63,8 +66,21 @@ var PositionSquare = function(iRow, iCol, type) {
         return true;
     };
     this.generateIdentifier = function() {
-        return this.index.toString().replace(",", "");
+        return this.pos[0].toString() + this.pos[1].toString();
     }
+};
+
+var PlayerSprites = {
+    UP : new Sprite('assets/cima.png', [0, 0], [40, 76], 9, [0, 1, 2, 3, 4, 5]),
+    RIGHT: new Sprite('assets/right.png', [0, 0], [56, 68], 9, [0, 1, 2, 3, 4, 5]),
+    DOWN: new Sprite('assets/baixo.png', [0, 0], [40, 72], 9, [0, 1, 2, 3, 4, 5]),
+    LEFT: new Sprite('assets/left.png', [0, 0], [56, 68], 9, [0, 1, 2, 3, 4, 5]),
+    D_LEFT_UP: new Sprite('assets/cima.png', [0, 0], [40, 76], 9, [0, 1, 2, 3, 4, 5]),
+    D_LEFT_DOWN: new Sprite('assets/left.png', [0, 0], [56, 68], 9, [0, 1, 2, 3, 4, 5]),
+    D_RIGHT_UP: new Sprite('assets/right.png', [0, 0], [56, 68], 9, [0, 1, 2, 3, 4, 5]),
+    D_RIGHT_DOWN: new Sprite('assets/baixo.png', [0, 0], [40, 72], 9, [0, 1, 2, 3, 4, 5]),
+    VICTORY: new Sprite('assets/comemorar.png', [0, 0], [36, 72], 3, [0, 1]),
+    LOSE: new Sprite('assets/dead.gif', [0, 0], [64, 28], 1, [0])
 };
 
 /**
@@ -75,36 +91,68 @@ var PositionSquare = function(iRow, iCol, type) {
  * this.pos = It is an array [x y] that defines the position of drawing
  * this.sprite = Define the sprite object {@link Sprite} of the player
  * this.translate = It is an array [x y] that defines how much have to deslocate to start drawing at canvas
- * this.refPoint = It in an array[x y] that defines where is the player is located on the scene
+ * this.pos = It in an array[x y] that defines where is the player is located on the scene
  *                  (it points to the foot of the character)
  * this.actualSquare it defines the actual {@link PositionSquare} the player is located
  * this.updatePosition(newPosition) = the param new Position is the new value of this.pos. This function updates
- *                          the values of refPoint and translate based on this new value.
+ *                          the values of pos and translate based on this new value.
  */
 var Player = function(start) {
-    this.sprite = new Sprite('assets/right.png', [0, 0], [56, 68], 9, [0, 1, 2, 3, 4, 5]);
-    this.refPoint = start.center;
-    this.pos = [this.refPoint[0] - this.sprite.size[0]/2, this.refPoint[1] - this.sprite.size[1]];
-    this.translate = [Math.abs(DimensionSquare/2 - this.sprite.size[0]/2)+ this.pos[0],
-        Math.abs(DimensionSquare/2 - this.sprite.size[1]/2) + this.pos[1]];
+    this.sprite = PlayerSprites[MovimentDirection.RIGHT];
+    this.movimentDirection = MovimentDirection.RIGHT;
+    this.pos = start.center;
+    this.translate = null;
     this.actualSquare = start;
     this.updatePosition = function(newPosition) {
+        this.updateMoviment(MovimentDirection.identifyDirection(this.pos, newPosition));
         this.pos = newPosition;
-        this.translate = [Math.abs(DimensionSquare/2 - this.sprite.size[0]/2)+ this.pos[0],
-                        Math.abs(DimensionSquare/2 - this.sprite.size[1]/2) + this.pos[1]];
-        this.refPoint = [this.pos[0] + this.sprite.size[0]/2, this.pos[1] + this.sprite.size[1]];
+        this.translate = [Math.abs(DimensionSquare/2 - this.sprite.size[0]/2)+ this.pos[0] - this.sprite.size[0]/2,
+                        Math.abs(DimensionSquare/2 - this.sprite.size[1]/2) + this.pos[1] - this.sprite.size[1]];
     };
-};
+    this.updateMoviment = function(newMoviment) {
+        var previousMoving = this.movimentDirection;
+        if (!(wasMovingToLeft() || wasMovingToUp() || wasMovingToRight() || wasMovingToDown())) {
+            this.sprite = PlayerSprites[newMoviment];
+        }
 
-/*new Sprite('assets/comemorar.png', [0, 0], [36, 72], 2, [0, 1]);*/
-/*new Sprite('assets/cima.png', [0, 0], [40, 76], 9, [0, 1, 2, 3, 4, 5]);*/
-/*new Sprite('assets/left.png', [0, 0], [56, 68], 9, [0, 1, 2, 3, 4, 5]); */
+        function wasMovingToLeft() {
+            return ((newMoviment == MovimentDirection.LEFT || newMoviment == MovimentDirection.D_LEFT_DOWN || newMoviment == MovimentDirection.D_LEFT_UP)
+            && previousMoving == MovimentDirection.LEFT);
+        }
+
+        function wasMovingToRight() {
+            return ((newMoviment == MovimentDirection.RIGHT || newMoviment == MovimentDirection.D_RIGHT_DOWN || newMoviment == MovimentDirection.D_RIGHT_UP)
+            && previousMoving == MovimentDirection.RIGHT);
+        }
+
+        function wasMovingToUp() {
+            return ((newMoviment == MovimentDirection.UP || newMoviment == MovimentDirection.D_LEFT_UP || newMoviment == MovimentDirection.D_RIGHT_UP)
+            && previousMoving == MovimentDirection.UP);
+        }
+
+        function wasMovingToDown() {
+            return ((newMoviment == MovimentDirection.DOWN || newMoviment == MovimentDirection.D_LEFT_DOWN || newMoviment == MovimentDirection.D_RIGHT_DOWN)
+            && previousMoving == MovimentDirection.DOWN);
+        }
+
+        this.movimentDirection = newMoviment;
+    };
+    this.updateSprite = function(newSprite) {
+        this.sprite = newSprite;
+        this.translate = [Math.abs(DimensionSquare/2 - this.sprite.size[0]/2)+ this.pos[0] - this.sprite.size[0]/2,
+            Math.abs(DimensionSquare/2 - this.sprite.size[1]/2) + this.pos[1] - this.sprite.size[1]];
+    };
+    this.updatePosition(start.center);
+};
 
 var Goal = function(goal) {
     this.pos = goal.pos;
+    this.square = goal;
     this.sprite = new Sprite('assets/portal.png', [0, 0], [30, 31], 10, [0, 1, 2]);
     this.translate = [Math.abs(DimensionSquare/2 - this.sprite.size[0]/2)+ this.pos[0],
-                      Math.abs(DimensionSquare/2 - this.sprite.size[1]/2) + this.pos[1]]
+                      Math.abs(DimensionSquare/2 - this.sprite.size[1]/2) + this.pos[1]];
+    this.center = [this.translate[0] + this.sprite.size[0]/2, this.translate[1] + this.sprite.size[1]/2];
+
 };
 
 var TypeMovement = {
@@ -118,31 +166,31 @@ var TypeMovement = {
     }
 };
 
-var MovimentDirection = function() {
-    this.UP = "UP";
-    this.DOWN = "DOWN";
-    this.LEFT = "LEFT";
-    this.RIGHT = "RIGHT";
-    this.D_LEFT_UP = "D_LEFT_UP";
-    this.D_LEFT_DOWN = "D_LEFT_DOWN";
-    this.D_RIGHT_UP = "D_RIGHT_UP";
-    this.D_RIGHT_DOWN = "D_RIGHT_DOWN";
+var MovimentDirection = {
+    UP : "UP",
+    DOWN : "DOWN",
+    LEFT : "LEFT",
+    RIGHT : "RIGHT",
+    D_LEFT_UP : "D_LEFT_UP",
+    D_LEFT_DOWN : "D_LEFT_DOWN",
+    D_RIGHT_UP : "D_RIGHT_UP",
+    D_RIGHT_DOWN : "D_RIGHT_DOWN",
 
-    this.identifyDirection = function(squareFrom, squareTo) {
-        if (squareTo.index[0] < squareFrom.index[0]
-            && squareTo.index[1] < squareFrom.index[1]) return this.D_LEFT_UP;
-        else if (squareTo.index[0] == squareFrom.index[0]
-            && squareTo.index[1] < squareFrom.index[1]) return this.UP;
-        else if (squareTo.index[0] > squareFrom.index[0]
-                && squareTo.index[1] < squareFrom.index[1]) return this.D_RIGHT_UP;
-        else if (squareTo.index[0] < squareFrom.index[0]
-                && squareTo.index[1] == squareFrom.index[1]) return this.LEFT;
-        else if (squareTo.index[0] > squareFrom.index[0]
-                && squareTo.index[1] == squareFrom.index[1]) return this.RIGHT;
-        else if (squareTo.index[0] < squareFrom.index[0]
-            && squareTo.index[1] > squareFrom.index[1]) return this.D_LEFT_DOWN;
-        else if (squareTo.index[0] == squareFrom.index[0]
-            && squareTo.index[1] > squareFrom.index[1]) return this.DOWN;
+    identifyDirection : function(from, to) {
+        if (to[0] < from[0]
+            && to[1] < from[1]) return this.D_LEFT_UP;
+        else if (to[0] == from[0]
+            && to[1] < from[1]) return this.UP;
+        else if (to[0] > from[0]
+                && to[1] < from[1]) return this.D_RIGHT_UP;
+        else if (to[0] < from[0]
+                && to[1] == from[1]) return this.LEFT;
+        else if (to[0] > from[0]
+                && to[1] == from[1]) return this.RIGHT;
+        else if (to[0] < from[0]
+            && to[1] > from[1]) return this.D_LEFT_DOWN;
+        else if (to[0] == from[0]
+            && to[1] > from[1]) return this.DOWN;
         else return this.D_RIGHT_DOWN;
     }
 

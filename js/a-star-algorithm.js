@@ -25,52 +25,84 @@ var AStarAlgorithm = function(config) {
     var open =  new PriorityQueue({ comparator: function(a, b) {
         return a.priority - b.priority; }
     });
-    var cameFrom = [];
-
 
     var start = config.start;
     var goal = config.goal;
     var map = config.map;
     var costs = config.costs;
-
-
+    var way = [];
     this.next = function() {
-       return cameFrom.pop();
+        return way.pop();
     };
 
     function algorithm() {
         var initialMove = new Move(start, 0);
         var cost_so_far = {};
-
+        var wayBack = {};
         open.queue(initialMove);
         cost_so_far[start.generateIdentifier()] = 0;
-
+        var previousSquare = null;
         while(open.length > 0) {
             var current = open.dequeue();
-
+            //backIfCurrentIsNotNeighbor(previousSquare, current.square);
+            //cameFrom.push(current.square);
             if (current.square.equals(goal)) {
                 break;
             }
 
             $.each(findNeighbors(current.square), function(index, next) {
                 var newCost = cost_so_far[current.square.generateIdentifier()] + findCost(current.square, next);
-                if (cost_so_far[next.generateIdentifier()] == null || newCost < cost_so_far[next.generateIdentifier()]) {
+                if ((cost_so_far[next.generateIdentifier()] == null || newCost < cost_so_far[next.generateIdentifier()])) {
                     cost_so_far[next.generateIdentifier()] = newCost;
-
                     open.queue(new Move(next, newCost + calculateDistanceToGoal(next)));
-                    cameFrom.push(current.square);
+                    wayBack[next.generateIdentifier()] = current.square;
                 }
             });
-
+            previousSquare = current.square;
         }
 
-        return cameFrom;
+        buildWay(wayBack);
 
     }
 
+    function buildWay(wayBack) {
+        var initiSearch = goal;
+        way.push(initiSearch);
+        while (!initiSearch.equals(start)) {
+            initiSearch = wayBack[initiSearch.generateIdentifier()];
+            way.push(initiSearch);
+        }
+    }
+
+    /*function backIfCurrentIsNotNeighbor(previous, current) {
+        if (previous != null && !isNeighbor(previous, current)) {
+            for (var i = cameFrom.length -2; i >= 0; i--) {
+                var square = cameFrom[i];
+                cameFrom.push(square);
+                if (isNeighbor(square, current)) {
+                    break;
+                }
+            }
+        }
+    }*/
+
+    /*function isNeighbor(previous, current) {
+        var isNeighbor = false;
+        if (previous != null) {
+            for (var i = previous.index[0] - 1; i <= previous.index[0] + 1; i++) {
+                for (var j = previous.index[1] - 1; j <= previous.index[1] + 1; j++) {
+                    if (i == current.index[0] && j == current.index[1]) {
+                        isNeighbor = true;
+                    }
+                }
+            }
+        }
+        return isNeighbor;
+    }*/
+
     function calculateDistanceToGoal(square) {
-        var x = Math.pow(square.index[0] - goal.index[0], 2);
-        var y = Math.pow(square.index[1] - goal.index[1], 2);
+        var x = Math.pow(square.center[0] - goal.center[0], 2);
+        var y = Math.pow(square.center[1] - goal.center[1], 2);
         return Math.sqrt(x + y);
     }
 
@@ -101,7 +133,10 @@ var AStarAlgorithm = function(config) {
         this.priority = priority;
     };
 
-    cameFrom = [new PositionSquare(4, 2, TypePosition.ALLOWED), new PositionSquare(3, 1, TypePosition.ALLOWED),
-        new PositionSquare(2, 1, TypePosition.ALLOWED)]
+    algorithm();
+
+
+
+
 
 };
