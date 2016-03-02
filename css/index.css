@@ -60,6 +60,8 @@ p.file {
     top: 0;
     opacity: 0.01;
     cursor: pointer;
+    width: 170px;
+    height: 42px;
 
 }
 
