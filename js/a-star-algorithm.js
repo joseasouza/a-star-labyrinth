@@ -22,20 +22,31 @@
 
 var AStarAlgorithm = function(config) {
 
-    var open =  new PriorityQueue({ comparator: function(a, b) {
-        return a.priority - b.priority; }
-    });
-
     var start = config.start;
     var goal = config.goal;
     var map = config.map;
     var costs = config.costs;
     var way = [];
+    var openned = [];
+    var closed = [];
     this.next = function() {
         return way.pop();
     };
+    this.way = function() {
+        return way;
+    };
+    this.openned = function() {
+        return openned;
+    };
+
+    this.closed = function() {
+        return closed;
+    };
 
     function algorithm() {
+        var open =  new PriorityQueue({ comparator: function(a, b) {
+            return a.priority - b.priority; }
+        });
         var initialMove = new Move(start, 0);
         var cost_so_far = {};
         var wayBack = {};
@@ -46,6 +57,7 @@ var AStarAlgorithm = function(config) {
             var current = open.dequeue();
             //backIfCurrentIsNotNeighbor(previousSquare, current.square);
             //cameFrom.push(current.square);
+            pushClosed(current.square);
             if (current.square.equals(goal)) {
                 break;
             }
@@ -62,7 +74,14 @@ var AStarAlgorithm = function(config) {
         }
 
         buildWay(wayBack);
+        buildOpenned(open);
 
+    }
+
+    function pushClosed(square) {
+        if (!closedAlreadyContains(square)) {
+            closed.push(square);
+        }
     }
 
     function buildWay(wayBack) {
@@ -72,6 +91,26 @@ var AStarAlgorithm = function(config) {
             initiSearch = wayBack[initiSearch.generateIdentifier()];
             way.push(initiSearch);
         }
+    }
+
+    function buildOpenned(open) {
+        while(open.length > 0) {
+            var current = open.dequeue();
+            if (!closedAlreadyContains(current.square)) {
+                openned.push(current.square);
+            }
+        }
+    }
+
+    function closedAlreadyContains(square) {
+        var shouldAdd = false;
+        $.each(closed, function(key, closedSquare) {
+            if (closedSquare.equals(square)) {
+                shouldAdd = true;
+                return false;
+            }
+        });
+       return shouldAdd;
     }
 
     /*function backIfCurrentIsNotNeighbor(previous, current) {

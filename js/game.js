@@ -31,6 +31,9 @@ var Game = function(labyrinth, aStar, nameFile) {
     var gameTime = 0;
     var playerSpeed = 150;
     var texture;
+    var way = aStar.way().slice();
+    var openned = aStar.openned().slice();
+    var closed = aStar.closed().slice();
     var blockList = {};
     for (var i = 0; i < labyrinth.map.length; i++) {
         for (var j = 0; j < labyrinth.map[0].length; j++) {
@@ -40,6 +43,7 @@ var Game = function(labyrinth, aStar, nameFile) {
             }
         }
     }
+    var start = labyrinth.start;
 
     var GameMove = function(squareTo) {
         this.squareTo = squareTo;
@@ -156,23 +160,68 @@ var Game = function(labyrinth, aStar, nameFile) {
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         grid.draw(ctx);
+        renderOpenNClosed();
+        renderWay();
+        renderStartNGoal();
 
-        ctx.save();
-        ctx.translate(goal.translate[0], goal.translate[1]);
-        goal.sprite.render(ctx);
-        ctx.restore();
 
-       var blockListDown = renderMapUp();
 
+        var blockListDown = renderMapUp();
         ctx.save();
         ctx.translate(player.translate[0], player.translate[1]);
         player.sprite.render(ctx);
         ctx.restore();
 
         renderMapDown(blockListDown);
-
         //renderRefersPoint();
 
+    }
+
+    function renderOpenNClosed() {
+        $.each(closed, function(key, square) {
+            ctx.save();
+            ctx.fillStyle = "rgba(192, 72, 72, 0.2)";
+            ctx.fillRect(square.pos[0], square.pos[1], DimensionSquare, DimensionSquare);
+            ctx.restore();
+        });
+
+        $.each(openned, function(key, square) {
+            ctx.save();
+            ctx.fillStyle = "rgba(60, 162, 162, 0.2)";
+            ctx.fillRect(square.pos[0], square.pos[1], DimensionSquare, DimensionSquare);
+            ctx.restore();
+        });
+    }
+
+    function renderStartNGoal() {
+        ctx.save();
+        ctx.translate(goal.translate[0], goal.translate[1]);
+        goal.sprite.render(ctx);
+        ctx.restore();
+
+        var startImg = resources.get(start.imgUrl);
+        var translate = [start.translate[0] + Math.abs(DimensionStart.width/2 - DimensionSquare/2),
+            start.translate[1] + Math.abs(DimensionStart.height/2 - DimensionSquare/2)];
+        ctx.save();
+        ctx.translate(translate[0], translate[1]);
+        ctx.drawImage(startImg, 0, 0, DimensionStart.width, DimensionStart.height);
+        ctx.restore();
+    }
+
+    function renderWay() {
+        var footPrintImg = resources.get("assets/footprints.gif");
+
+        $.each(way, function(index, square) {
+            if (!square.equals(start) && !square.equals(goal.square)) {
+                ctx.save();
+                var translate = square.translate;
+                translate = [translate[0] + Math.abs(DimensionFootPrint / 2 - DimensionSquare / 2),
+                    translate[1] + Math.abs(DimensionFootPrint / 2 - DimensionSquare / 2)];
+                ctx.translate(translate[0], translate[1]);
+                ctx.drawImage(footPrintImg, 0, 0, DimensionFootPrint, DimensionFootPrint);
+                ctx.restore();
+            }
+        });
     }
 
     function renderRefersPoint() {
@@ -244,7 +293,9 @@ var Game = function(labyrinth, aStar, nameFile) {
         "assets/portal.png",
         "assets/Shrub48.gif",
         "assets/comemorar.png",
-        "assets/dead.gif"
+        "assets/dead.gif",
+        "assets/footprints.gif",
+        "assets/start.gif"
     ]);
     resources.onReady(iniciar);
 

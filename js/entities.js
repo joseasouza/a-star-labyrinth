@@ -47,13 +47,16 @@ var TypePosition = {
 
 var DimensionSquare = 50;
 var DimensionBarrier = 56;
+var DimensionFootPrint = 32;
+var DimensionStart = {width:  21, height: 36};
 
+//@TODO Não é necessario utilizar translate, pois pos[] = translate[]
+//@TODO this.imgurl deve ser alterado para utilizar sprite
 var PositionSquare = function(iRow, iCol, type) {
     this.pos = [iCol * DimensionSquare, iRow * DimensionSquare];
     this.center = [this.pos[0] + DimensionSquare/2, this.pos[1] + DimensionSquare/2];
     this.translate = [this.center[0] - DimensionBarrier/2, this.center[1] - DimensionBarrier/2];
     this.index = [iRow, iCol];
-    this.referPoint = [this.translate[0] + DimensionBarrier/2, this.translate[1] + DimensionBarrier];
     this.type = type;
     this.imgUrl = "assets/Shrub48.gif";
     this.equals  = function(otherSquare) {
@@ -99,7 +102,6 @@ var PlayerSprites = {
  */
 var Player = function(start) {
     this.sprite = PlayerSprites[MovimentDirection.RIGHT];
-    this.movimentDirection = MovimentDirection.RIGHT;
     this.pos = start.center;
     this.translate = null;
     this.actualSquare = start;
@@ -110,32 +112,7 @@ var Player = function(start) {
                         Math.abs(DimensionSquare/2 - this.sprite.size[1]/2) + this.pos[1] - this.sprite.size[1]];
     };
     this.updateMoviment = function(newMoviment) {
-        var previousMoving = this.movimentDirection;
-        if (!(wasMovingToLeft() || wasMovingToUp() || wasMovingToRight() || wasMovingToDown())) {
-            this.sprite = PlayerSprites[newMoviment];
-        }
-
-        function wasMovingToLeft() {
-            return ((newMoviment == MovimentDirection.LEFT || newMoviment == MovimentDirection.D_LEFT_DOWN || newMoviment == MovimentDirection.D_LEFT_UP)
-            && previousMoving == MovimentDirection.LEFT);
-        }
-
-        function wasMovingToRight() {
-            return ((newMoviment == MovimentDirection.RIGHT || newMoviment == MovimentDirection.D_RIGHT_DOWN || newMoviment == MovimentDirection.D_RIGHT_UP)
-            && previousMoving == MovimentDirection.RIGHT);
-        }
-
-        function wasMovingToUp() {
-            return ((newMoviment == MovimentDirection.UP || newMoviment == MovimentDirection.D_LEFT_UP || newMoviment == MovimentDirection.D_RIGHT_UP)
-            && previousMoving == MovimentDirection.UP);
-        }
-
-        function wasMovingToDown() {
-            return ((newMoviment == MovimentDirection.DOWN || newMoviment == MovimentDirection.D_LEFT_DOWN || newMoviment == MovimentDirection.D_RIGHT_DOWN)
-            && previousMoving == MovimentDirection.DOWN);
-        }
-
-        this.movimentDirection = newMoviment;
+        this.sprite = PlayerSprites[newMoviment];
     };
     this.updateSprite = function(newSprite) {
         this.sprite = newSprite;

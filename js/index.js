@@ -113,6 +113,7 @@ $(document).ready(function() {
             map.push(rowMap);
         }
 
+        start.imgUrl = "assets/start.gif";
         return new Labyrinth(rowCount, colCount, horCost, verCost, map, start, goal);
     }
 });
