@@ -27,8 +27,19 @@
  */
 $(document).ready(function() {
     var game;
+    var aStar;
+
+    $(".card-body").slimScroll({
+        height: "100%"
+    });
+
+    var minCanvasWidth = $(".card-body").width();
+    var minCanvasHeight = $(".card-body").height();
 
     $('#fileUpload').change(function(e) {
+        if (game != null) {
+            game.stop();
+        }
         var file = this.files[0];
         var textType = /text.*/;
 
@@ -38,7 +49,30 @@ $(document).ready(function() {
                 $("#fileUpload").val("");
                 $("li.dropdown.profile").removeClass("open");
                 var lab = labyrinthFromFile(reader.result);
-                game = new Game(lab);
+                var costs = {};
+                costs[TypeMovement.VERTICAL] = 1;
+                costs[TypeMovement.HORIZONTAL] = 1;
+                costs[TypeMovement.DIAGONAL] = 1;
+
+                var configs = {
+                    start : lab.start,
+                    goal: lab.goal,
+                    map: lab.map,
+                    costs: costs
+                };
+
+                aStar = new AStarAlgorithm(configs);
+
+                var canvas = document.getElementById("canvas");
+                var canvasWidth = lab.colCount * 50;
+                var canvasHeight = lab.rowCount * 50;
+
+                if (minCanvasWidth > canvasWidth) canvasWidth = minCanvasWidth;
+                if (minCanvasHeight > canvasHeight) canvasHeight = minCanvasHeight;
+
+                canvas.width = canvasWidth;
+                canvas.height = canvasHeight;
+                game = new Game(lab, aStar, file.name);
             };
             reader.readAsText(file);
         }
@@ -62,22 +96,24 @@ $(document).ready(function() {
             row = linesFile[i].split(" ");
             iRow = i-1;
             rowMap = [];
+            if (row.length != colCount) continue;
             $.each(row, function(iCol, value) {
-                tipo = TypePosition.array[Number(value)];
+                var tipo = TypePosition.array[Number(value)];
                 var square = new PositionSquare(iRow, iCol, tipo);
                 rowMap.push(square);
 
                 if (tipo == TypePosition.START) {
-                    start = square.center;
+                    start = square;
                 }
                 if (tipo == TypePosition.GOAL) {
-                    goal = square.center;
+                    goal = square;
                 }
 
             });
             map.push(rowMap);
         }
 
+        start.imgUrl = "assets/start.gif";
         return new Labyrinth(rowCount, colCount, horCost, verCost, map, start, goal);
     }
 });
