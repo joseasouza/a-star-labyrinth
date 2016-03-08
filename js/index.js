@@ -73,10 +73,43 @@ $(document).ready(function() {
                 canvas.width = canvasWidth;
                 canvas.height = canvasHeight;
                 game = new Game(lab, aStar, file.name);
+                $("#play").trigger("click");
             };
             reader.readAsText(file);
         }
 
+    });
+
+    $("#play").on("click", function() {
+       $(this).find("i").toggleClass("fa-play").toggleClass("fa-pause");
+        if ($(this).find("i").is(".fa-pause")) {
+            game.play();
+        } else {
+            game.pause();
+        }
+    });
+
+    $("#stop").on("click", function() {
+        game.stop();
+        $("#play").find("i").addClass("fa-play").removeClass("fa-pause");
+    });
+
+    $("#chkAbertos").on("change", function() {
+       if (game != null) {
+               game.showOpen($("#chkAbertos").prop("checked"));
+       }
+    });
+
+    $("#chkFechados").on("change", function() {
+       if (game != null) {
+               game.showClosed($("#chkFechados").prop("checked"));
+       }
+    });
+
+    $("#chkGrade").on("change", function() {
+       if (game != null) {
+               game.showGrade($("#chkGrade").prop("checked"));
+       }
     });
 
     function labyrinthFromFile(result) {

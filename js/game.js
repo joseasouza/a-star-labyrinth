@@ -35,6 +35,10 @@ var Game = function(labyrinth, aStar, nameFile) {
     var openned = aStar.openned().slice();
     var closed = aStar.closed().slice();
     var blockList = {};
+    var isShowOpen = true;
+    var isShowClosed = true;
+    var isShowGrade = true;
+    var isToPlay = true;
     for (var i = 0; i < labyrinth.map.length; i++) {
         for (var j = 0; j < labyrinth.map[0].length; j++) {
             var square = labyrinth.map[i][j];
@@ -51,6 +55,35 @@ var Game = function(labyrinth, aStar, nameFile) {
 
     this.stop = function() {
         main = function() {};
+        window.setTimeout(function() {
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#444444";
+            ctx.fill();
+            ctx.restore();
+        }, 1000 / 30);
+
+    };
+
+    this.showOpen = function(isShow) {
+        isShowOpen = isShow;
+    };
+
+    this.showClosed = function(isShow) {
+        isShowClosed = isShow;
+    };
+
+    this.showGrade = function(isShow) {
+        isShowGrade = isShow;
+    };
+
+    this.play = function() {
+        isToPlay = true;
+    };
+
+    this.pause = function() {
+        isToPlay = false;
     };
 
     var requestAnimFrame = (function () {
@@ -70,7 +103,9 @@ var Game = function(labyrinth, aStar, nameFile) {
         var now = Date.now();
         var dt = (now - lastTime) / 1000.0;
 
-        update(dt);
+        if (isToPlay) {
+            update(dt);
+        }
         render();
 
         lastTime = now;
@@ -159,7 +194,9 @@ var Game = function(labyrinth, aStar, nameFile) {
         ctx.fillStyle = texture;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        grid.draw(ctx);
+        if (isShowGrade) {
+            grid.draw(ctx);
+        }
         renderOpenNClosed();
         renderWay();
         renderStartNGoal();
@@ -178,19 +215,23 @@ var Game = function(labyrinth, aStar, nameFile) {
     }
 
     function renderOpenNClosed() {
-        $.each(closed, function(key, square) {
-            ctx.save();
-            ctx.fillStyle = "rgba(192, 72, 72, 0.2)";
-            ctx.fillRect(square.pos[0], square.pos[1], DimensionSquare, DimensionSquare);
-            ctx.restore();
-        });
+        if (isShowClosed) {
+            $.each(closed, function (key, square) {
+                ctx.save();
+                ctx.fillStyle = "rgba(192, 72, 72, 0.2)";
+                ctx.fillRect(square.pos[0], square.pos[1], DimensionSquare, DimensionSquare);
+                ctx.restore();
+            });
+        }
 
-        $.each(openned, function(key, square) {
-            ctx.save();
-            ctx.fillStyle = "rgba(60, 162, 162, 0.2)";
-            ctx.fillRect(square.pos[0], square.pos[1], DimensionSquare, DimensionSquare);
-            ctx.restore();
-        });
+        if (isShowOpen) {
+            $.each(openned, function (key, square) {
+                ctx.save();
+                ctx.fillStyle = "rgba(60, 162, 162, 0.2)";
+                ctx.fillRect(square.pos[0], square.pos[1], DimensionSquare, DimensionSquare);
+                ctx.restore();
+            });
+        }
     }
 
     function renderStartNGoal() {
@@ -282,6 +323,61 @@ var Game = function(labyrinth, aStar, nameFile) {
         movePlayer = function(){};
         updatePlayer = function(){};
     }
+
+
+    function getMousePos(canvas, evt) {
+        var rect = canvas.getBoundingClientRect();
+        return {
+            x: evt.clientX - rect.left,
+            y: evt.clientY - rect.top
+        };
+    }
+
+    var isToShowToolTip = false;
+    $(canvas).on("click", function(evt) {
+        var mousePos = getMousePos(canvas, evt);
+        var i = Math.floor(mousePos.y / DimensionSquare);
+        var j = Math.floor(mousePos.x / DimensionSquare);
+        var selectedSquare;
+        $.each(openned, function(key, square) {
+            if (square.index[0] == i && square.index[1] == j) {
+                selectedSquare = square;
+                return false;
+            }
+        });
+        if (selectedSquare == null) {
+            $.each(closed, function(key, square) {
+                if (square.index[0] == i && square.index[1] == j) {
+                    selectedSquare = square;
+                    return false;
+                }
+            });
+        }
+        if (selectedSquare != null) {
+            isToShowToolTip ? $(canvas).hideBalloon() : $(canvas).showBalloon();
+            isToShowToolTip = !isToShowToolTip;
+            $(canvas).showBalloon({
+                position: "left",
+                offsetX: selectedSquare.pos[0],
+                offsetY: canvas.height/2 - selectedSquare.pos[1] - DimensionSquare/2,
+                css: {
+                    minWidth: "20px",
+                    padding: "5px",
+                    borderRadius: "6px",
+                    border: "solid 1px #777",
+                    boxShadow: "4px 4px 4px #555",
+                    color: "#666",
+                    backgroundColor: "#efefef",
+                    opacity: "0.85",
+                    zIndex: "32767",
+                    textAlign: "left"
+                },
+                contents: selectedSquare.type
+            });
+        }
+
+    });
+
 
     resources.load([
         'assets/textura.png',

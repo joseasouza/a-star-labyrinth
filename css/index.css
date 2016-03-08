@@ -1,3 +1,25 @@
+.control-game {
+    position: absolute;
+    bottom: 0px;
+}
+
+.control-game a {
+    font-size: 28px;
+}
+
+.control-game .fa-play {
+    color: #05D059;
+}
+
+.control-game .fa-stop {
+    color: #C04848;
+    margin-left: 15px;
+}
+
+.control-game .fa-pause {
+    color: #3CA2A2;
+}
+
 .navbar .dropdown.profile .dropdown-menu {
     width: 450px;
 }

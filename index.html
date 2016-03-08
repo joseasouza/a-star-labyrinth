@@ -55,6 +55,20 @@
                                     <div class="profile-info">
                                         <h4 class="username"><i class="fa fa-cog"></i> Opções</h4>
                                         <div class="container-fluid">
+                                            <p class="pull-left">Tamanho</p>
+                                            <div class="col-xs-12">
+                                                <div class="form-group col-xs-6">
+                                                    <label for="linhas" class="pull-left">Linhas</label>
+                                                    <input type="number" class="form-control input-sm" id="linhas" min="1">
+                                                </div>
+                                                <div class="form-group col-xs-6">
+                                                    <label for="colunas" class="pull-left">Colunas</label>
+                                                    <input type="number" class="form-control input-sm" id="colunas" min="1">
+                                                </div>
+
+                                            </div>
+                                        </div>
+                                        <div class="container-fluid">
                                             <p class="pull-left">Pesos</p>
                                             <div class="col-xs-12">
                                                 <div class="form-group col-xs-4">
@@ -73,17 +87,19 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="container-fluid">
+                                        <div class="container-fluid col-xs-offset-1">
                                             <div class="pull-left checkbox3 checkbox-inline checkbox-check checkbox-light">
-                                                <input type="checkbox" id="chkAbertos" checked>
+                                                <input type="checkbox" id="chkAbertos" checked="">
                                                 <label for="chkAbertos">Exibir Abertos</label>
                                             </div>
                                             <div class="pull-left checkbox3 checkbox-inline checkbox-check checkbox-light">
-                                                <input type="checkbox" id="chkFechados" checked>
+                                                <input type="checkbox" id="chkFechados" checked="">
                                                 <label for="chkFechados">Exibir Fechados</label>
                                             </div>
-                                        </div>
-                                        <p class="file btn btn-success" for="fileUpload">
+                                            <div class="pull-left checkbox3 checkbox-inline checkbox-check checkbox-light">
+                                                <input type="checkbox" id="chkGrade" checked="">
+                                                <label for="chkGrade">Exibir Grade</label>
+                                            </div></div>                                        <p class="file btn btn-success" for="fileUpload">
                                             <input type="file" name="file" id="fileUpload">
                                             <label for="fileUpload"><i class="fa fa-upload"></i> Carregar Labirinto</label>
                                         </p>
@@ -129,6 +145,10 @@
                                 <div class="card-body">
                                     <canvas id="canvas" class="canvas" width="1200px" height="520">
                                     </canvas>
+                                    <div class="container-fluid control-game">
+                                        <a href="#" id="play"><i class="fa fa-play"></i></a>
+                                        <a href="#" id="stop"><i class="fa fa-stop"></i></a>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -158,6 +178,7 @@
             <script type="text/javascript" src="js/entities.js"></script>
             <script type="text/javascript" src="js/input.js"></script>
             <script type="text/javascript" src="js/priority-queue.min.js"></script>
+            <script type="text/javascript" src="js/jquery.balloon.min.js"></script>
             <script type="text/javascript" src="js/a-star-algorithm.js"></script>
             <script type="text/javascript" src="js/game.js"></script>
             <script type="text/javascript" src="js/index.js"></script>
