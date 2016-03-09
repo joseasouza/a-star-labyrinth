@@ -39,6 +39,7 @@ var Game = function(labyrinth, aStar, nameFile) {
     var isShowClosed = true;
     var isShowGrade = true;
     var isToPlay = true;
+    var selectedSquare = null;
     for (var i = 0; i < labyrinth.map.length; i++) {
         for (var j = 0; j < labyrinth.map[0].length; j++) {
             var square = labyrinth.map[i][j];
@@ -54,6 +55,7 @@ var Game = function(labyrinth, aStar, nameFile) {
     };
 
     this.stop = function() {
+        $(canvas).unbind();
         main = function() {};
         window.setTimeout(function() {
             ctx.save();
@@ -198,10 +200,13 @@ var Game = function(labyrinth, aStar, nameFile) {
             grid.draw(ctx);
         }
         renderOpenNClosed();
-        renderWay();
+        if (selectedSquare == null) {
+            renderWay(way);
+        } else {
+            renderWay(aStar.findWayBack(selectedSquare));
+        }
+
         renderStartNGoal();
-
-
 
         var blockListDown = renderMapUp();
         ctx.save();
@@ -216,19 +221,19 @@ var Game = function(labyrinth, aStar, nameFile) {
 
     function renderOpenNClosed() {
         if (isShowClosed) {
-            $.each(closed, function (key, square) {
+            $.each(closed, function (key, closeMove) {
                 ctx.save();
-                ctx.fillStyle = "rgba(192, 72, 72, 0.2)";
-                ctx.fillRect(square.pos[0], square.pos[1], DimensionSquare, DimensionSquare);
+                ctx.fillStyle = "rgba(192, 72, 72, 0.35)";
+                ctx.fillRect(closeMove.square.pos[0], closeMove.square.pos[1], DimensionSquare, DimensionSquare);
                 ctx.restore();
             });
         }
 
         if (isShowOpen) {
-            $.each(openned, function (key, square) {
+            $.each(openned, function (key, openMove) {
                 ctx.save();
-                ctx.fillStyle = "rgba(60, 162, 162, 0.2)";
-                ctx.fillRect(square.pos[0], square.pos[1], DimensionSquare, DimensionSquare);
+                ctx.fillStyle = "rgba(60, 162, 162, 0.35)";
+                ctx.fillRect(openMove.square.pos[0], openMove.square.pos[1], DimensionSquare, DimensionSquare);
                 ctx.restore();
             });
         }
@@ -249,10 +254,10 @@ var Game = function(labyrinth, aStar, nameFile) {
         ctx.restore();
     }
 
-    function renderWay() {
+    function renderWay(wayToDraw) {
         var footPrintImg = resources.get("assets/footprints.gif");
 
-        $.each(way, function(index, square) {
+        $.each(wayToDraw, function(index, square) {
             if (!square.equals(start) && !square.equals(goal.square)) {
                 ctx.save();
                 var translate = square.translate;
@@ -333,51 +338,64 @@ var Game = function(labyrinth, aStar, nameFile) {
         };
     }
 
-    var isToShowToolTip = false;
+    //@TODO Remover todo este código para uma novo arquivo javascript
     $(canvas).on("click", function(evt) {
+        $(canvas).hideBalloon();
+        selectedSquare = null;
         var mousePos = getMousePos(canvas, evt);
         var i = Math.floor(mousePos.y / DimensionSquare);
         var j = Math.floor(mousePos.x / DimensionSquare);
-        var selectedSquare;
-        $.each(openned, function(key, square) {
-            if (square.index[0] == i && square.index[1] == j) {
-                selectedSquare = square;
+        var selectedMove;
+        $.each(openned, function(key, openMove) {
+            if (openMove.square.index[0] == i && openMove.square.index[1] == j) {
+                selectedMove = openMove;
+                selectedMove.type = "Aberto";
                 return false;
             }
         });
-        if (selectedSquare == null) {
-            $.each(closed, function(key, square) {
-                if (square.index[0] == i && square.index[1] == j) {
-                    selectedSquare = square;
+        if (selectedMove == null) {
+            $.each(closed, function(key, closedMove) {
+                if (closedMove.square.index[0] == i && closedMove.square.index[1] == j) {
+                    selectedMove = closedMove;
+                    selectedMove.type = "Fechado";
                     return false;
                 }
             });
         }
-        if (selectedSquare != null) {
-            isToShowToolTip ? $(canvas).hideBalloon() : $(canvas).showBalloon();
-            isToShowToolTip = !isToShowToolTip;
-            $(canvas).showBalloon({
-                position: "left",
-                offsetX: selectedSquare.pos[0],
-                offsetY: canvas.height/2 - selectedSquare.pos[1] - DimensionSquare/2,
-                css: {
-                    minWidth: "20px",
-                    padding: "5px",
-                    borderRadius: "6px",
-                    border: "solid 1px #777",
-                    boxShadow: "4px 4px 4px #555",
-                    color: "#666",
-                    backgroundColor: "#efefef",
-                    opacity: "0.85",
-                    zIndex: "32767",
-                    textAlign: "left"
-                },
-                contents: selectedSquare.type
-            });
+        if (selectedMove != null) {
+            selectedSquare = selectedMove.square;
+            var balloonSets = {};
+            if (selectedMove.square.pos[0] > canvas.width/2) {
+                balloonSets.position = "left";
+                balloonSets.tipPosition = 3;
+                balloonSets.x = selectedMove.square.pos[0];
+                balloonSets.y = canvas.height/2 - selectedMove.square.pos[1] - DimensionSquare/2;
+            } else {
+                balloonSets.position = "right";
+                balloonSets.tipPosition = 2;
+                balloonSets.x = selectedMove.square.pos[0] - canvas.width + DimensionSquare;
+                balloonSets.y = canvas.height/2 - selectedMove.square.pos[1] - DimensionSquare/2;
+            }
+            setTimeout(function() {
+                $("#baloon").find("h5").html(selectedMove.type);
+                $("#baloon").find("label[name='cost']").html(selectedMove.cost.toFixed(2));
+                $("#baloon").find("label[name='distance']").html(selectedMove.distance.toFixed(2));
+                $(canvas).showBalloon({
+                    position: balloonSets.position,
+                    offsetX: balloonSets.x,
+                    offsetY: balloonSets.y,
+                    indexTip: balloonSets.tipPosition,
+                    contents: $("#baloon").html()
+                });
+
+                $("button[name='closeBaloon']").on("click", function() {
+                    $(canvas).hideBalloon();
+                    selectedSquare = null;
+                });
+            }, 400);
         }
 
     });
-
 
     resources.load([
         'assets/textura.png',

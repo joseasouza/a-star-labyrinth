@@ -30,6 +30,7 @@ var Labyrinth = function(rowCount, colCount, horCost, verCost, map, start, goal)
     this.colCount = colCount;
     this.horCost = horCost;
     this.verCost = verCost;
+    this.diaCost = Math.sqrt(Math.pow(horCost, 2) + Math.pow(verCost, 2));
     this.map = map;
     this.start = start;
     this.goal = goal;
@@ -137,8 +138,8 @@ var TypeMovement = {
     VERTICAL : "VER",
     DIAGONAL : "DIA",
     identifyDirection : function(squareFrom, squareTo) {
-        if (squareTo.index[0] == squareFrom.index[0]) return this.VERTICAL;
-        else if (squareTo.index[1] == squareFrom.index[1]) return this.HORIZONTAL;
+        if (squareTo.index[1] == squareFrom.index[1]) return this.VERTICAL;
+        else if (squareTo.index[0] == squareFrom.index[0]) return this.HORIZONTAL;
         else return this.DIAGONAL;
     }
 };

@@ -73,17 +73,17 @@
                                             <div class="col-xs-12">
                                                 <div class="form-group col-xs-4">
                                                     <label for="pesoHorizontal" class="pull-left">Horizontal</label>
-                                                    <input type="text" class="form-control input-sm"
+                                                    <input value="1" type="number" class="form-control input-sm"
                                                            id="pesoHorizontal"/>
                                                 </div>
                                                     <div class="form-group col-xs-4">
                                                     <label for="pesoVertical" class="pull-left">Vertical</label>
-                                                    <input type="text" class="form-control input-sm"
+                                                    <input value="1" type="number" class="form-control input-sm"
                                                            id="pesoVertical"/>
                                                     </div>
                                                     <div class="form-group col-xs-4">
                                                         <label for="pesoDiagonal" class="pull-left">Diagonal</label>
-                                                        <input type="text" class="form-control input-sm" id="pesoDiagonal">
+                                                        <input value="1" type="number" class="form-control input-sm" id="pesoDiagonal">
                                                 </div>
                                             </div>
                                         </div>
@@ -100,7 +100,7 @@
                                                 <input type="checkbox" id="chkGrade" checked="">
                                                 <label for="chkGrade">Exibir Grade</label>
                                             </div></div>                                        <p class="file btn btn-success" for="fileUpload">
-                                            <input type="file" name="file" id="fileUpload">
+                                            <input type="file" class="hide" name="file" id="fileUpload">
                                             <label for="fileUpload"><i class="fa fa-upload"></i> Carregar Labirinto</label>
                                         </p>
                                         <p class="file btn btn-info">
@@ -154,6 +154,16 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+        <div id="baloon" class="hide">
+            <button name="closeBaloon" type="button" class="close"><span>×</span></button>
+            <div style="width: 150px;">
+                <h5 style="color: #2088F8; text-align: center; font-weight: bold;"></h5>
+                <label style="font-weight: normal;margin-right: 5px;">Custo (f'):</label>
+                <label name="cost" style="font-weight: normal;"></label>
+                <label style="font-weight: normal;margin-right: 5px;">Distância (g'):</label>
+                <label name="distance" style="font-weight: normal;"></label>
             </div>
         </div>
         <!--<footer class="app-footer">

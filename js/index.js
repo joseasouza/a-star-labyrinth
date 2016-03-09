@@ -50,9 +50,9 @@ $(document).ready(function() {
                 $("li.dropdown.profile").removeClass("open");
                 var lab = labyrinthFromFile(reader.result);
                 var costs = {};
-                costs[TypeMovement.VERTICAL] = 1;
-                costs[TypeMovement.HORIZONTAL] = 1;
-                costs[TypeMovement.DIAGONAL] = 1;
+                costs[TypeMovement.VERTICAL] = Number($("#pesoVertical").val());
+                costs[TypeMovement.HORIZONTAL] = Number($("#pesoHorizontal").val());
+                costs[TypeMovement.DIAGONAL] = Number($("#pesoDiagonal").val());
 
                 var configs = {
                     start : lab.start,
@@ -73,7 +73,9 @@ $(document).ready(function() {
                 canvas.width = canvasWidth;
                 canvas.height = canvasHeight;
                 game = new Game(lab, aStar, file.name);
-                $("#play").trigger("click");
+                if ($("#play").find("i").is(".fa-play")) {
+                    $("#play").find("i").toggleClass("fa-play").toggleClass("fa-pause");
+                }
             };
             reader.readAsText(file);
         }
