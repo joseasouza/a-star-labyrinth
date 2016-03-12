@@ -397,21 +397,7 @@ var Game = function(labyrinth, aStar, nameFile) {
 
     });
 
-    resources.load([
-        'assets/textura.png',
-        "assets/personagem.gif",
-        "assets/left.png",
-        "assets/right.png",
-        "assets/baixo.png",
-        "assets/cima.png",
-        "assets/portal.png",
-        "assets/Shrub48.gif",
-        "assets/comemorar.png",
-        "assets/dead.gif",
-        "assets/footprints.gif",
-        "assets/start.gif"
-    ]);
-    resources.onReady(iniciar);
+    iniciar();
 
 };
 
