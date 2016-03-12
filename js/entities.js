@@ -84,7 +84,8 @@ var PlayerSprites = {
     D_RIGHT_UP: new Sprite('assets/right.png', [0, 0], [56, 68], 9, [0, 1, 2, 3, 4, 5]),
     D_RIGHT_DOWN: new Sprite('assets/baixo.png', [0, 0], [40, 72], 9, [0, 1, 2, 3, 4, 5]),
     VICTORY: new Sprite('assets/comemorar.png', [0, 0], [36, 72], 3, [0, 1]),
-    LOSE: new Sprite('assets/dead.gif', [0, 0], [64, 28], 1, [0])
+    LOSE: new Sprite('assets/dead.gif', [0, 0], [64, 28], 1, [0]),
+    NORMAL: new Sprite('assets/personagem.gif', [0,  0], [32, 70], 1, [0], null, true)
 };
 
 /**
@@ -109,7 +110,7 @@ var Player = function(start) {
     this.updatePosition = function(newPosition) {
         this.updateMoviment(MovimentDirection.identifyDirection(this.pos, newPosition));
         this.pos = newPosition;
-        this.translate = [Math.abs(DimensionSquare/2 - this.sprite.size[0]/2)+ this.pos[0] - this.sprite.size[0]/2,
+        this.translate = [Math.abs(DimensionSquare/2 - this.sprite.size[0]/2)+ this.pos[0] - DimensionSquare/2,
                         Math.abs(DimensionSquare/2 - this.sprite.size[1]/2) + this.pos[1] - this.sprite.size[1]];
     };
     this.updateMoviment = function(newMoviment) {
@@ -117,7 +118,7 @@ var Player = function(start) {
     };
     this.updateSprite = function(newSprite) {
         this.sprite = newSprite;
-        this.translate = [Math.abs(DimensionSquare/2 - this.sprite.size[0]/2)+ this.pos[0] - this.sprite.size[0]/2,
+        this.translate = [Math.abs(DimensionSquare/2 - this.sprite.size[0]/2)+ this.pos[0] - DimensionSquare/2,
             Math.abs(DimensionSquare/2 - this.sprite.size[1]/2) + this.pos[1] - this.sprite.size[1]];
     };
     this.updatePosition(start.center);

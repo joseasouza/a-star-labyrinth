@@ -9,8 +9,8 @@
 var App = function() {
 
     var canvas = document.getElementById("canvas");
-    var minCanvasWidth = $(".card-body").width();
-    var minCanvasHeight = $(".card-body").height();
+    var minCanvasWidth = 25 * DimensionSquare;
+    var minCanvasHeight = 11 * DimensionSquare;
     var grid;
     var game;
     var aStar;
@@ -26,6 +26,11 @@ var App = function() {
         } else {
             labBuilder = new LabyrinthBuilder(grid, oldLabyrinth);
         }
+
+        $(labBuilder).on("finishStartPosition", function() {
+            $("#controlStartPosition").removeClass("active");
+            //@TODO Refatorar e organizar
+        });
     }
 
     function emptyLabyrinth() {
@@ -47,13 +52,9 @@ var App = function() {
         return new Labyrinth(linhas, colunas, horCost, verCost, map, null, null);
     }
 
-    $(".card-body").slimScroll({
-        height: "100%"
-    });
-
     $('#fileUpload').change(function(e) {
         if (game != null) {
-            game.stop();
+            gameStop();
         }
         var file = this.files[0];
         var textType = /text.*/;
@@ -79,14 +80,18 @@ var App = function() {
 
     function setCanvasSize(rowCount, colCount) {
         var canvas = document.getElementById("canvas");
-        var canvasWidth = colCount * 50;
-        var canvasHeight = rowCount * 50;
+        var canvasWidth = colCount * DimensionSquare ;
+        var canvasHeight = rowCount * DimensionSquare;
 
         if (minCanvasWidth > canvasWidth) canvasWidth = minCanvasWidth;
         if (minCanvasHeight > canvasHeight) canvasHeight = minCanvasHeight;
 
         canvas.width = canvasWidth;
         canvas.height = canvasHeight;
+        $(".card-body").slimScroll({
+            height: '101%',
+            axis: 'both'
+        });
     }
 
     $("a[name='play']").on("click", function() {
@@ -119,14 +124,22 @@ var App = function() {
         }
     });
 
-
-    $("#stop").on("click", function() {
+    function gameStop() {
         game.stop();
         game = null;
+    }
+
+    $("#controlStartPosition").on("click", function(){
+       $(this).addClass("active");
+        labBuilder.startPositionSelected();
+    });
+
+    $("#stop").on("click", function() {
+        gameStop();
         $("a[name='play']").find("i").addClass("fa-play").removeClass("fa-pause");
         iniciar(labBuilder.getLabyrinth());
         $("#control-labyrinth").toggleClass("slideInUp").toggleClass("slideOutDown");
-       $("div.div-absolute-control-labyrinth").css("z-index", 0);
+        $("div.div-absolute-control-labyrinth").css("z-index", 0);
         $("#control-game").toggleClass("slideOutUp").toggleClass("slideInDown");
     });
 

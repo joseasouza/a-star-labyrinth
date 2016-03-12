@@ -18,6 +18,22 @@ var LabyrinthBuilder = function(grid, lab) {
     var start;
     var player;
     var goal;
+    var builder = this;
+    var mousePosition = {
+        x: 0,
+        y : 0
+    };
+
+    var OPTION_SELECTED = {
+        START_POSITION : "start_position",
+        GOAL: "goal",
+        BLOCK: "block",
+        ERASE: "erase",
+        NONE: "none"
+    };
+
+    var actualOptionSelected = OPTION_SELECTED.NONE;
+
 
     this.stop = function() {
         $(canvas).unbind();
@@ -36,6 +52,10 @@ var LabyrinthBuilder = function(grid, lab) {
         iniciar();
     }
 
+    this.startPositionSelected = function() {
+        actualOptionSelected = OPTION_SELECTED.START_POSITION;
+    };
+
     this.getLabyrinth = function() {
         return labyrinth;
     };
@@ -43,6 +63,7 @@ var LabyrinthBuilder = function(grid, lab) {
     this.loadLabyrinth = function (lab) {
         pause();
         labyrinth = lab;
+        blockList = {};
         for (var i = 0; i < labyrinth.map.length; i++) {
             for (var j = 0; j < labyrinth.map[0].length; j++) {
                 var square = labyrinth.map[i][j];
@@ -137,6 +158,8 @@ var LabyrinthBuilder = function(grid, lab) {
             renderMap();
         }
 
+        renderOptionSelected();
+
         isRendering = false;
     }
 
@@ -171,6 +194,48 @@ var LabyrinthBuilder = function(grid, lab) {
             ctx.restore();
         });
     }
+
+    function renderOptionSelected() {
+        if (actualOptionSelected == OPTION_SELECTED.START_POSITION) {
+            var i = Math.floor(mousePosition.y / DimensionSquare);
+            var j = Math.floor(mousePosition.x / DimensionSquare);
+            var square = new PositionSquare(i, j, TypePosition.START);
+            var player = new Player(square);
+            player.updateSprite(PlayerSprites.NORMAL);
+            ctx.save();
+            ctx.globalAlpha = 0.5;
+            ctx.translate(player.translate[0], player.translate[1]);
+            player.sprite.render(ctx);
+            ctx.restore();
+        }
+    }
+
+    function getMousePos(canvas, evt) {
+        var rect = canvas.getBoundingClientRect();
+        return {
+            x: evt.clientX - rect.left,
+            y: evt.clientY - rect.top
+        };
+    }
+
+    $(canvas).on('click', function(e) {
+        if (actualOptionSelected == OPTION_SELECTED.START_POSITION) {
+            var i = Math.floor(mousePosition.y / DimensionSquare);
+            var j = Math.floor(mousePosition.x / DimensionSquare);
+            var square = new PositionSquare(i, j, TypePosition.START);
+            player = new Player(square);
+            player.updateSprite(PlayerSprites.VICTORY);
+            start = square;
+            //@TODO terminar de implementar
+            actualOptionSelected = OPTION_SELECTED.NONE;
+            $(builder).trigger("finishStartPosition");
+
+        }
+    });
+
+    $(canvas).on('mousemove', function(e) {
+        mousePosition = getMousePos(canvas, e);
+    });
 
     this.loadLabyrinth(lab);
 
