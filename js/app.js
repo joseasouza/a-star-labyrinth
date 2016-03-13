@@ -1,305 +1,285 @@
+/*
+ * Copyright (c) 2016 - José Victor Alves de Souza - https://github.com/dudevictor/
+ */
+/**
+ * This script defines the App function and all logic to control and build the labyrinth.
+ * Also it control and calls gameplay and A* algorithm functions.
+ * @constructor it initializes the App
+ */
+var App = function() {
 
-// A cross-browser requestAnimationFrame
-// See https://hacks.mozilla.org/2011/08/animating-with-javascript-from-setinterval-to-requestanimationframe/
-var requestAnimFrame = (function(){
-    return window.requestAnimationFrame       ||
-        window.webkitRequestAnimationFrame ||
-        window.mozRequestAnimationFrame    ||
-        window.oRequestAnimationFrame      ||
-        window.msRequestAnimationFrame     ||
-        function(callback){
-            window.setTimeout(callback, 1000 / 60);
-        };
-})();
+    var canvas = document.getElementById("canvas");
+    var minCanvasWidth = 25 * DimensionSquare;
+    var minCanvasHeight = 11 * DimensionSquare;
+    var grid;
+    var game;
+    var aStar;
+    var labBuilder;
+    var isBuildingLab;
 
-// Create the canvas
-var canvas = document.createElement("canvas");
-var ctx = canvas.getContext("2d");
-canvas.width = 512;
-canvas.height = 480;
-document.body.appendChild(canvas);
+    function iniciar(oldLabyrinth) {
+        isBuildingLab = true;
+        if (oldLabyrinth == null) {
+            var newLab =  emptyLabyrinth();
+            setCanvasSize(newLab.rowCount, newLab.colCount);
+            labBuilder = new LabyrinthBuilder(grid, newLab);
+        } else {
+            labBuilder = new LabyrinthBuilder(grid, oldLabyrinth);
+        }
 
-// The main game loop
-var lastTime;
-function main() {
-    var now = Date.now();
-    var dt = (now - lastTime) / 1000.0;
-
-    update(dt);
-    render();
-
-    lastTime = now;
-    requestAnimFrame(main);
-};
-
-function init() {
-    terrainPattern = ctx.createPattern(resources.get('img/terrain.png'), 'repeat');
-
-    document.getElementById('play-again').addEventListener('click', function() {
-        reset();
-    });
-
-    reset();
-    lastTime = Date.now();
-    main();
-}
-
-resources.load([
-    'img/sprites.png',
-    'img/terrain.png'
-]);
-resources.onReady(init);
-
-// Game state
-var player = {
-    pos: [0, 0],
-    sprite: new Sprite('img/sprites.png', [0, 0], [39, 39], 16, [0, 1])
-};
-
-var bullets = [];
-var enemies = [];
-var explosions = [];
-
-var lastFire = Date.now();
-var gameTime = 0;
-var isGameOver;
-var terrainPattern;
-
-var score = 0;
-var scoreEl = document.getElementById('score');
-
-// Speed in pixels per second
-var playerSpeed = 200;
-var bulletSpeed = 500;
-var enemySpeed = 100;
-
-// Update game objects
-function update(dt) {
-    gameTime += dt;
-
-    handleInput(dt);
-    updateEntities(dt);
-
-    // It gets harder over time by adding enemies using this
-    // equation: 1-.993^gameTime
-    if(Math.random() < 1 - Math.pow(.993, gameTime)) {
-        enemies.push({
-            pos: [canvas.width,
-                  Math.random() * (canvas.height - 39)],
-            sprite: new Sprite('img/sprites.png', [0, 78], [80, 39],
-                               6, [0, 1, 2, 3, 2, 1])
+        $(labBuilder).on("finishSelection", function() {
+            deactivateAllControls();
+            //@TODO Refatorar e organizar
         });
     }
 
-    checkCollisions();
+    function emptyLabyrinth() {
+        var linhas = Number($("#linhas").val());
+        var colunas = Number($("#colunas").val());
+        var horCost = Number($("#pesoHorizontal").val());
+        var verCost = Number($("#pesoVertical").val());
+        var diaCost = Number($("#pesoDiagonal").val());
 
-    scoreEl.innerHTML = score;
-};
-
-function handleInput(dt) {
-    if(input.isDown('DOWN') || input.isDown('s')) {
-        player.pos[1] += playerSpeed * dt;
-    }
-
-    if(input.isDown('UP') || input.isDown('w')) {
-        player.pos[1] -= playerSpeed * dt;
-    }
-
-    if(input.isDown('LEFT') || input.isDown('a')) {
-        player.pos[0] -= playerSpeed * dt;
-    }
-
-    if(input.isDown('RIGHT') || input.isDown('d')) {
-        player.pos[0] += playerSpeed * dt;
-    }
-
-    if(input.isDown('SPACE') &&
-       !isGameOver &&
-       Date.now() - lastFire > 100) {
-        var x = player.pos[0] + player.sprite.size[0] / 2;
-        var y = player.pos[1] + player.sprite.size[1] / 2;
-
-        bullets.push({ pos: [x, y],
-                       dir: 'forward',
-                       sprite: new Sprite('img/sprites.png', [0, 39], [18, 8]) });
-        bullets.push({ pos: [x, y],
-                       dir: 'up',
-                       sprite: new Sprite('img/sprites.png', [0, 50], [9, 5]) });
-        bullets.push({ pos: [x, y],
-                       dir: 'down',
-                       sprite: new Sprite('img/sprites.png', [0, 60], [9, 5]) });
-
-        lastFire = Date.now();
-    }
-}
-
-function updateEntities(dt) {
-    // Update the player sprite animation
-    player.sprite.update(dt);
-
-    // Update all the bullets
-    for(var i=0; i<bullets.length; i++) {
-        var bullet = bullets[i];
-
-        switch(bullet.dir) {
-        case 'up': bullet.pos[1] -= bulletSpeed * dt; break;
-        case 'down': bullet.pos[1] += bulletSpeed * dt; break;
-        default:
-            bullet.pos[0] += bulletSpeed * dt;
-        }
-
-        // Remove the bullet if it goes offscreen
-        if(bullet.pos[1] < 0 || bullet.pos[1] > canvas.height ||
-           bullet.pos[0] > canvas.width) {
-            bullets.splice(i, 1);
-            i--;
-        }
-    }
-
-    // Update all the enemies
-    for(var i=0; i<enemies.length; i++) {
-        enemies[i].pos[0] -= enemySpeed * dt;
-        enemies[i].sprite.update(dt);
-
-        // Remove if offscreen
-        if(enemies[i].pos[0] + enemies[i].sprite.size[0] < 0) {
-            enemies.splice(i, 1);
-            i--;
-        }
-    }
-
-    // Update all the explosions
-    for(var i=0; i<explosions.length; i++) {
-        explosions[i].sprite.update(dt);
-
-        // Remove if animation is done
-        if(explosions[i].sprite.done) {
-            explosions.splice(i, 1);
-            i--;
-        }
-    }
-}
-
-// Collisions
-
-function collides(x, y, r, b, x2, y2, r2, b2) {
-    return !(r <= x2 || x > r2 ||
-             b <= y2 || y > b2);
-}
-
-function boxCollides(pos, size, pos2, size2) {
-    return collides(pos[0], pos[1],
-                    pos[0] + size[0], pos[1] + size[1],
-                    pos2[0], pos2[1],
-                    pos2[0] + size2[0], pos2[1] + size2[1]);
-}
-
-function checkCollisions() {
-    checkPlayerBounds();
-    
-    // Run collision detection for all enemies and bullets
-    for(var i=0; i<enemies.length; i++) {
-        var pos = enemies[i].pos;
-        var size = enemies[i].sprite.size;
-
-        for(var j=0; j<bullets.length; j++) {
-            var pos2 = bullets[j].pos;
-            var size2 = bullets[j].sprite.size;
-
-            if(boxCollides(pos, size, pos2, size2)) {
-                // Remove the enemy
-                enemies.splice(i, 1);
-                i--;
-
-                // Add score
-                score += 100;
-
-                // Add an explosion
-                explosions.push({
-                    pos: pos,
-                    sprite: new Sprite('img/sprites.png',
-                                       [0, 117],
-                                       [39, 39],
-                                       16,
-                                       [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-                                       null,
-                                       true)
-                });
-
-                // Remove the bullet and stop this iteration
-                bullets.splice(j, 1);
-                break;
+        var map = [];
+        for (var i = 0; i < linhas; i++) {
+            var array = [];
+            for (var j = 0; j < colunas; j++) {
+                array.push(new PositionSquare(i, j, TypePosition.ALLOWED));
             }
+            map.push(array);
+        }
+        //@TODO Colocar Peso diagonal
+        return new Labyrinth(linhas, colunas, horCost, verCost, map, null, null);
+    }
+
+    $('#fileUpload').change(function(e) {
+        if (game != null) {
+            gameStop();
+        }
+        var file = this.files[0];
+        var textType = /text.*/;
+
+        if (file.type.match(textType)) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                $("#fileUpload").val("");
+                $("li.dropdown.profile").removeClass("open");
+                var lab = labyrinthFromFile(reader.result);
+                setCanvasSize(lab.rowCount, lab.colCount);
+                updateSettingsLabyrinthOnView(lab);
+                labBuilder.loadLabyrinth(lab);
+
+            };
+            reader.readAsText(file);
         }
 
-        if(boxCollides(pos, size, player.pos, player.sprite.size)) {
-            gameOver();
+    });
+
+    function setCanvasSize(rowCount, colCount) {
+        var canvas = document.getElementById("canvas");
+        var canvasWidth = colCount * DimensionSquare ;
+        var canvasHeight = rowCount * DimensionSquare;
+
+        if (minCanvasWidth > canvasWidth) canvasWidth = minCanvasWidth;
+        if (minCanvasHeight > canvasHeight) canvasHeight = minCanvasHeight;
+
+        canvas.width = canvasWidth;
+        canvas.height = canvasHeight;
+        $(".card-body").slimScroll({
+            height: '101%',
+            axis: 'both'
+        });
+    }
+
+    $("#play").on("click", function () {
+        labBuilder.stop();
+        deactivateAllControls();
+        var costs = {};
+        costs[TypeMovement.VERTICAL] = Number($("#pesoVertical").val());
+        costs[TypeMovement.HORIZONTAL] = Number($("#pesoHorizontal").val());
+        costs[TypeMovement.DIAGONAL] = Number($("#pesoDiagonal").val());
+        var lab = labBuilder.buildLabyrinth();
+        var configs = {
+            start: lab.start,
+            goal: lab.goal,
+            map: lab.map,
+            costs: costs
+        };
+
+        aStar = new AStarAlgorithm(configs);
+        game = new Game(lab, aStar, "arquivo");
+
+        $("#control-labyrinth").removeClass("slideInUp").addClass("slideOutDown");
+        setTimeout(function () {
+            $("div.div-absolute-control-labyrinth").css("z-index", -1)
+        }, 500);
+        $("#control-game").toggleClass("slideOutUp").toggleClass("slideInDown").removeClass("hide");
+    });
+
+    $("#continue").on("click", function () {
+        $(this).find("i").toggleClass("fa-play").toggleClass("fa-pause");
+        if ($(this).find("i").hasClass("fa-play")) {
+            game.pause();
+        } else {
+            game.proceed();
         }
-    }
-}
+    });
 
-function checkPlayerBounds() {
-    // Check bounds
-    if(player.pos[0] < 0) {
-        player.pos[0] = 0;
-    }
-    else if(player.pos[0] > canvas.width - player.sprite.size[0]) {
-        player.pos[0] = canvas.width - player.sprite.size[0];
+    function gameStop() {
+        game.stop();
+        game = null;
     }
 
-    if(player.pos[1] < 0) {
-        player.pos[1] = 0;
-    }
-    else if(player.pos[1] > canvas.height - player.sprite.size[1]) {
-        player.pos[1] = canvas.height - player.sprite.size[1];
-    }
-}
+    $("#controlStartPosition").on("click", function(){
+        if ($(this).hasClass("active")) {
+            deactivateAllControls();
+            labBuilder.noControlSelected();
+        } else {
+            deactivateAllControls();
+            $(this).addClass("active");
+            labBuilder.startPositionSelected();
+        }
 
-// Draw everything
-function render() {
-    ctx.fillStyle = terrainPattern;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    });
 
-    // Render the player if the game isn't over
-    if(!isGameOver) {
-        renderEntity(player);
+    $("#controlGoalPosition").on("click", function(){
+        if ($(this).hasClass("active")) {
+            deactivateAllControls();
+            labBuilder.noControlSelected();
+        } else {
+            deactivateAllControls();
+            $(this).addClass("active");
+            labBuilder.goalPositionSelected();
+        }
+
+    });
+
+    $("#controlBlock").on("click", function() {
+        if ($(this).hasClass("active")) {
+            deactivateAllControls();
+            labBuilder.noControlSelected();
+        } else {
+            deactivateAllControls();
+            $(this).addClass("active");
+            labBuilder.controlBlockSelected();
+        }
+    });
+
+    $("#controlErase").on("click", function() {
+        if ($(this).hasClass("active")) {
+            deactivateAllControls();
+            labBuilder.noControlSelected();
+        } else {
+            deactivateAllControls();
+            $(this).addClass("active");
+            labBuilder.controlEraseSelected();
+        }
+    });
+
+    $("#stop").on("click", function() {
+        gameStop();
+        $("#continue i").removeClass("fa-play").addClass("fa-pause");
+        iniciar(labBuilder.buildLabyrinth());
+        $("#control-labyrinth").removeClass("slideOutDown").addClass("slideInUp");
+        $("div.div-absolute-control-labyrinth").css("z-index", 0);
+        $("#control-game").toggleClass("slideOutUp").toggleClass("slideInDown");
+    });
+
+    $("#chkAbertos").on("change", function() {
+        if (game != null) {
+            game.showOpen($("#chkAbertos").prop("checked"));
+        }
+    });
+
+    $("#chkFechados").on("change", function() {
+        if (game != null) {
+            game.showClosed($("#chkFechados").prop("checked"));
+        }
+    });
+
+    $("#chkGrade").on("change", function() {
+        if (game != null) {
+            game.showGrade($("#chkGrade").prop("checked"));
+        }
+    });
+
+    function updateSettingsLabyrinthOnView(lab) {
+        $("#linhas").val(lab.rowCount);
+        $("#colunas").val(lab.colCount);
+        $("#pesoHorizontal").val(lab.horCost);
+        $("#pesoVertical").val(lab.verCost);
+        $("#pesoDiagonal").val(lab.diaCost);
     }
 
-    renderEntities(bullets);
-    renderEntities(enemies);
-    renderEntities(explosions);
+    function deactivateAllControls() {
+        $("div.control-labyrinth a.active").removeClass("active");
+    }
+
+    function labyrinthFromFile(result) {
+        var linesFile = result.split("\n");
+        var firstLine = linesFile[0].split(" ");
+
+        var rowCount = Number(firstLine[0]);
+        var colCount = Number(firstLine[1]);
+        var horCost = Number(firstLine[2]);
+        var verCost = Number(firstLine[3]);
+        var start = [];
+        var goal = [];
+        var map = [];
+
+        var row, iRow, rowMap, type, square;
+        for (var i = 1; i < linesFile.length; i++) {
+            row = linesFile[i].split(" ");
+            iRow = i-1;
+            rowMap = [];
+            if (row.length != colCount) continue;
+            $.each(row, function(iCol, value) {
+                var tipo = TypePosition.array[Number(value)];
+                var square = new PositionSquare(iRow, iCol, tipo);
+                rowMap.push(square);
+
+                if (tipo == TypePosition.START) {
+                    start = square;
+                }
+                if (tipo == TypePosition.GOAL) {
+                    goal = square;
+                }
+
+            });
+            map.push(rowMap);
+        }
+
+        start.updateSprite(PositionSquareSprites.START);
+        return new Labyrinth(rowCount, colCount, horCost, verCost, map, start, goal);
+    }
+
+    var opts = {
+        distance: 50,
+        lineWidth: 0.2,
+        gridColor: "#000000",
+        caption: false,
+        horizontalLines: true,
+        verticalLines: true
+    };
+
+    grid = new Grid(opts);
+
+    resources.load([
+        'assets/textura.png',
+        "assets/personagem.gif",
+        "assets/left.png",
+        "assets/right.png",
+        "assets/baixo.png",
+        "assets/cima.png",
+        "assets/portal.png",
+        "assets/Shrub48.gif",
+        "assets/comemorar.png",
+        "assets/dead.gif",
+        "assets/footprints.gif",
+        "assets/start.gif",
+        "assets/erase.png"
+    ]);
+    resources.onReady(iniciar);
+
 };
 
-function renderEntities(list) {
-    for(var i=0; i<list.length; i++) {
-        renderEntity(list[i]);
-    }    
-}
-
-function renderEntity(entity) {
-    ctx.save();
-    ctx.translate(entity.pos[0], entity.pos[1]);
-    entity.sprite.render(ctx);
-    ctx.restore();
-}
-
-// Game over
-function gameOver() {
-    document.getElementById('game-over').style.display = 'block';
-    document.getElementById('game-over-overlay').style.display = 'block';
-    isGameOver = true;
-}
-
-// Reset game to original state
-function reset() {
-    document.getElementById('game-over').style.display = 'none';
-    document.getElementById('game-over-overlay').style.display = 'none';
-    isGameOver = false;
-    gameTime = 0;
-    score = 0;
-
-    enemies = [];
-    bullets = [];
-
-    player.pos = [50, canvas.height / 2];
-};

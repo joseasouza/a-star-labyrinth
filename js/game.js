@@ -35,6 +35,11 @@ var Game = function(labyrinth, aStar, nameFile) {
     var openned = aStar.openned().slice();
     var closed = aStar.closed().slice();
     var blockList = {};
+    var isShowOpen = true;
+    var isShowClosed = true;
+    var isShowGrade = true;
+    var isToPlay = true;
+    var selectedSquare = null;
     for (var i = 0; i < labyrinth.map.length; i++) {
         for (var j = 0; j < labyrinth.map[0].length; j++) {
             var square = labyrinth.map[i][j];
@@ -50,7 +55,37 @@ var Game = function(labyrinth, aStar, nameFile) {
     };
 
     this.stop = function() {
+        $(canvas).unbind();
         main = function() {};
+        window.setTimeout(function() {
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#444444";
+            ctx.fill();
+            ctx.restore();
+        }, 1000 / 30);
+
+    };
+
+    this.showOpen = function(isShow) {
+        isShowOpen = isShow;
+    };
+
+    this.showClosed = function(isShow) {
+        isShowClosed = isShow;
+    };
+
+    this.showGrade = function(isShow) {
+        isShowGrade = isShow;
+    };
+
+    this.proceed = function() {
+        isToPlay = true;
+    };
+
+    this.pause = function() {
+        isToPlay = false;
     };
 
     var requestAnimFrame = (function () {
@@ -70,7 +105,9 @@ var Game = function(labyrinth, aStar, nameFile) {
         var now = Date.now();
         var dt = (now - lastTime) / 1000.0;
 
-        update(dt);
+        if (isToPlay) {
+            update(dt);
+        }
         render();
 
         lastTime = now;
@@ -97,7 +134,7 @@ var Game = function(labyrinth, aStar, nameFile) {
 
     function updatePlayer(dt) {
         if (checkIfPlayerIsOnSquare()) {
-            player.actualSquare = gameMove.squareTo;
+            player.square = gameMove.squareTo;
             var newSquare = aStar.next();
             if (newSquare != null) {
                 gameMove = new GameMove(newSquare);
@@ -121,6 +158,7 @@ var Game = function(labyrinth, aStar, nameFile) {
     }
 
     function movePlayer(dt) {
+        var oldPos = player.pos;
         var x = player.pos[0];
         var y = player.pos[1];
 
@@ -141,6 +179,7 @@ var Game = function(labyrinth, aStar, nameFile) {
         }
 
         player.updatePosition([x, y]);
+        player.updateSpriteMoviment(oldPos, [x, y]);
 
     }
 
@@ -159,12 +198,17 @@ var Game = function(labyrinth, aStar, nameFile) {
         ctx.fillStyle = texture;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        grid.draw(ctx);
+        if (isShowGrade) {
+            grid.draw(ctx);
+        }
         renderOpenNClosed();
-        renderWay();
+        if (selectedSquare == null) {
+            renderWay(way);
+        } else {
+            renderWay(aStar.findWayBack(selectedSquare));
+        }
+
         renderStartNGoal();
-
-
 
         var blockListDown = renderMapUp();
         ctx.save();
@@ -178,19 +222,23 @@ var Game = function(labyrinth, aStar, nameFile) {
     }
 
     function renderOpenNClosed() {
-        $.each(closed, function(key, square) {
-            ctx.save();
-            ctx.fillStyle = "rgba(192, 72, 72, 0.2)";
-            ctx.fillRect(square.pos[0], square.pos[1], DimensionSquare, DimensionSquare);
-            ctx.restore();
-        });
+        if (isShowClosed) {
+            $.each(closed, function (key, closeMove) {
+                ctx.save();
+                ctx.fillStyle = "rgba(192, 72, 72, 0.35)";
+                ctx.fillRect(closeMove.square.pos[0], closeMove.square.pos[1], DimensionSquare, DimensionSquare);
+                ctx.restore();
+            });
+        }
 
-        $.each(openned, function(key, square) {
-            ctx.save();
-            ctx.fillStyle = "rgba(60, 162, 162, 0.2)";
-            ctx.fillRect(square.pos[0], square.pos[1], DimensionSquare, DimensionSquare);
-            ctx.restore();
-        });
+        if (isShowOpen) {
+            $.each(openned, function (key, openMove) {
+                ctx.save();
+                ctx.fillStyle = "rgba(60, 162, 162, 0.35)";
+                ctx.fillRect(openMove.square.pos[0], openMove.square.pos[1], DimensionSquare, DimensionSquare);
+                ctx.restore();
+            });
+        }
     }
 
     function renderStartNGoal() {
@@ -199,22 +247,21 @@ var Game = function(labyrinth, aStar, nameFile) {
         goal.sprite.render(ctx);
         ctx.restore();
 
-        var startImg = resources.get(start.imgUrl);
-        var translate = [start.translate[0] + Math.abs(DimensionStart.width/2 - DimensionSquare/2),
-            start.translate[1] + Math.abs(DimensionStart.height/2 - DimensionSquare/2)];
+        var translate = start.translate;/*[start.pos[0] + Math.abs(DimensionStart.width/2 - DimensionSquare/2),
+            start.pos[1] + Math.abs(DimensionStart.height/2 - DimensionSquare/2)];*/
         ctx.save();
         ctx.translate(translate[0], translate[1]);
-        ctx.drawImage(startImg, 0, 0, DimensionStart.width, DimensionStart.height);
+        start.sprite.render(ctx);
         ctx.restore();
     }
 
-    function renderWay() {
+    function renderWay(wayToDraw) {
         var footPrintImg = resources.get("assets/footprints.gif");
 
-        $.each(way, function(index, square) {
+        $.each(wayToDraw, function(index, square) {
             if (!square.equals(start) && !square.equals(goal.square)) {
                 ctx.save();
-                var translate = square.translate;
+                var translate = square.pos;
                 translate = [translate[0] + Math.abs(DimensionFootPrint / 2 - DimensionSquare / 2),
                     translate[1] + Math.abs(DimensionFootPrint / 2 - DimensionSquare / 2)];
                 ctx.translate(translate[0], translate[1]);
@@ -256,7 +303,7 @@ var Game = function(labyrinth, aStar, nameFile) {
             if (player.pos[1] > value.center[1]) {
                 ctx.save();
                 ctx.translate(value.translate[0], value.translate[1]);
-                ctx.drawImage(resources.get(value.imgUrl), 0, 0, DimensionBarrier, DimensionBarrier);
+                value.sprite.render(ctx);
                 ctx.restore();
                 delete blockListCopy[key];
             }
@@ -268,13 +315,13 @@ var Game = function(labyrinth, aStar, nameFile) {
         $.each(blockListDown, function(key, value) {
             ctx.save();
             ctx.translate(value.translate[0], value.translate[1]);
-            ctx.drawImage(resources.get(value.imgUrl), 0, 0, DimensionBarrier, DimensionBarrier);
+            value.sprite.render(ctx);
             ctx.restore();
         });
     }
 
     function endGame() {
-        if (player.actualSquare.equals(goal.square)) {
+        if (player.square.equals(goal.square)) {
             player.updateSprite(PlayerSprites.VICTORY);
         } else {
             player.updateSprite(PlayerSprites.LOSE);
@@ -283,21 +330,75 @@ var Game = function(labyrinth, aStar, nameFile) {
         updatePlayer = function(){};
     }
 
-    resources.load([
-        'assets/textura.png',
-        "assets/personagem.gif",
-        "assets/left.png",
-        "assets/right.png",
-        "assets/baixo.png",
-        "assets/cima.png",
-        "assets/portal.png",
-        "assets/Shrub48.gif",
-        "assets/comemorar.png",
-        "assets/dead.gif",
-        "assets/footprints.gif",
-        "assets/start.gif"
-    ]);
-    resources.onReady(iniciar);
+
+    function getMousePos(canvas, evt) {
+        var rect = canvas.getBoundingClientRect();
+        return {
+            x: evt.clientX - rect.left,
+            y: evt.clientY - rect.top
+        };
+    }
+
+    //@TODO Remover todo este código para uma novo arquivo javascript
+    $(canvas).on("click", function(evt) {
+        $(canvas).hideBalloon();
+        selectedSquare = null;
+        var mousePos = getMousePos(canvas, evt);
+        var i = Math.floor(mousePos.y / DimensionSquare);
+        var j = Math.floor(mousePos.x / DimensionSquare);
+        var selectedMove;
+        $.each(openned, function(key, openMove) {
+            if (openMove.square.index[0] == i && openMove.square.index[1] == j) {
+                selectedMove = openMove;
+                selectedMove.type = "Aberto";
+                return false;
+            }
+        });
+        if (selectedMove == null) {
+            $.each(closed, function(key, closedMove) {
+                if (closedMove.square.index[0] == i && closedMove.square.index[1] == j) {
+                    selectedMove = closedMove;
+                    selectedMove.type = "Fechado";
+                    return false;
+                }
+            });
+        }
+        if (selectedMove != null) {
+            selectedSquare = selectedMove.square;
+            var balloonSets = {};
+            if (selectedMove.square.pos[0] > canvas.width/2) {
+                balloonSets.position = "left";
+                balloonSets.tipPosition = 3;
+                balloonSets.x = selectedMove.square.pos[0];
+                balloonSets.y = canvas.height/2 - selectedMove.square.pos[1] - DimensionSquare/2;
+            } else {
+                balloonSets.position = "right";
+                balloonSets.tipPosition = 2;
+                balloonSets.x = selectedMove.square.pos[0] - canvas.width + DimensionSquare;
+                balloonSets.y = canvas.height/2 - selectedMove.square.pos[1] - DimensionSquare/2;
+            }
+            setTimeout(function() {
+                $("#baloon").find("h5").html(selectedMove.type);
+                $("#baloon").find("label[name='cost']").html(selectedMove.cost.toFixed(2));
+                $("#baloon").find("label[name='distance']").html(selectedMove.distance.toFixed(2));
+                $(canvas).showBalloon({
+                    position: balloonSets.position,
+                    offsetX: balloonSets.x,
+                    offsetY: balloonSets.y,
+                    indexTip: balloonSets.tipPosition,
+                    contents: $("#baloon").html()
+                });
+
+                $("button[name='closeBaloon']").on("click", function() {
+                    $(canvas).hideBalloon();
+                    selectedSquare = null;
+                });
+            }, 400);
+        }
+
+    });
+
+    iniciar();
 
 };
 

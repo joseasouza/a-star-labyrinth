@@ -1,13 +1,79 @@
+.div-absolute-control-labyrinth {
+    position: absolute;
+    bottom: -55px;
+    overflow: hidden;
+    z-index: 0;
+    padding-left: 15px;
+    padding-top: 5px;
+}
+
+.control-labyrinth {
+    height: 100%;
+    font-size: 28px;
+}
+
+.control-labyrinth a {
+    font-size: 28px;
+    margin-right: 10px;
+    overflow: hidden;"
+}
+
+.control-labyrinth img {
+    -moz-transition: all .3s ease;
+    -ms-transition: all .3s ease;
+    -o-transition: all .3s ease;
+    transition: all .3s ease;
+    -webkit-transition: all .3s ease;
+    -webkit-filter: grayscale(75%);
+    filter: grayscale(75%);
+}
+
+.control-labyrinth img:hover, .control-labyrinth a.active img {
+    -webkit-filter: grayscale(0%)  drop-shadow(1px 1px 3px #1ABC9C) drop-shadow(-1px -1px 3px #1ABC9C);;
+    filter: grayscale(0%) drop-shadow(1px 1px 3px #1ABC9C) drop-shadow(-1px -1px 3px #1ABC9C);;
+}
+
+.control-canvas {
+    background: #2C3E50;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23) !important;
+    height: 50px;
+    overflow: hidden;
+}
+
+.control-game {
+    height: 100%;
+    margin-top: 5px;
+    padding-left: 15px;
+}
+
+.control-game a {
+    font-size: 28px;
+    margin-right: 15px;
+}
+
+
+.fa-play {
+    color: #05D059;
+}
+
+.control-game .fa-stop {
+    color: #C04848;
+}
+
+.control-game .fa-pause {
+    color: #3CA2A2;
+}
+
 .navbar .dropdown.profile .dropdown-menu {
     width: 450px;
 }
 
 .card {
-    border-radius: 2px !important;
     box-shadow: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23) !important;
     width: 1240px;
     height: 530px;
     background: #444444;
+    overflow: visible;
 }
 
 .card-body {
