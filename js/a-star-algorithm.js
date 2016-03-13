@@ -98,9 +98,14 @@ var AStarAlgorithm = function(config) {
     function buildWay(wayBack) {
         var initiSearch = goal;
         way.push(initiSearch);
-        while (!initiSearch.equals(start)) {
+        while(initiSearch != null && !initiSearch.equals(start)) {
             initiSearch = wayBack[initiSearch.generateIdentifier()];
-            way.push(initiSearch);
+            if (initiSearch != null) {
+                way.push(initiSearch);
+            }
+        }
+        if (way.length <= 1) {
+            way = [];
         }
     }
 

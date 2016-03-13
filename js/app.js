@@ -27,8 +27,8 @@ var App = function() {
             labBuilder = new LabyrinthBuilder(grid, oldLabyrinth);
         }
 
-        $(labBuilder).on("finishStartPosition", function() {
-            $("#controlStartPosition").removeClass("active");
+        $(labBuilder).on("finishSelection", function() {
+            deactivateAllControls();
             //@TODO Refatorar e organizar
         });
     }
@@ -44,7 +44,7 @@ var App = function() {
         for (var i = 0; i < linhas; i++) {
             var array = [];
             for (var j = 0; j < colunas; j++) {
-                array.push(i, j, TypePosition.ALLOWED);
+                array.push(new PositionSquare(i, j, TypePosition.ALLOWED));
             }
             map.push(array);
         }
@@ -66,12 +66,9 @@ var App = function() {
                 $("li.dropdown.profile").removeClass("open");
                 var lab = labyrinthFromFile(reader.result);
                 setCanvasSize(lab.rowCount, lab.colCount);
+                updateSettingsLabyrinthOnView(lab);
                 labBuilder.loadLabyrinth(lab);
 
-
-                /*if ($("#play").find("i").is(".fa-play")) {
-                    $("#play").find("i").toggleClass("fa-play").toggleClass("fa-pause");
-                }*/
             };
             reader.readAsText(file);
         }
@@ -94,33 +91,37 @@ var App = function() {
         });
     }
 
-    $("a[name='play']").on("click", function() {
-        $(this).find("i").toggleClass("fa-play").toggleClass("fa-pause");
-        if ($(this).find("i").is(".fa-pause")) {
-            if(game != null) {
-                game.play();
-            } else {
-                labBuilder.stop();
-                var costs = {};
-                costs[TypeMovement.VERTICAL] = Number($("#pesoVertical").val());
-                costs[TypeMovement.HORIZONTAL] = Number($("#pesoHorizontal").val());
-                costs[TypeMovement.DIAGONAL] = Number($("#pesoDiagonal").val());
-                var lab = labBuilder.getLabyrinth();
-                var configs = {
-                    start : lab.start,
-                    goal: lab.goal,
-                    map: lab.map,
-                    costs: costs
-                };
+    $("#play").on("click", function () {
+        labBuilder.stop();
+        deactivateAllControls();
+        var costs = {};
+        costs[TypeMovement.VERTICAL] = Number($("#pesoVertical").val());
+        costs[TypeMovement.HORIZONTAL] = Number($("#pesoHorizontal").val());
+        costs[TypeMovement.DIAGONAL] = Number($("#pesoDiagonal").val());
+        var lab = labBuilder.buildLabyrinth();
+        var configs = {
+            start: lab.start,
+            goal: lab.goal,
+            map: lab.map,
+            costs: costs
+        };
 
-                aStar = new AStarAlgorithm(configs);
-                game = new Game(lab, aStar, "arquivo");
-                $("#control-labyrinth").toggleClass("slideInUp").toggleClass("slideOutDown");
-                setTimeout( function() { $("div.div-absolute-control-labyrinth").css("z-index",-1)}, 500);
-                $("#control-game").toggleClass("slideOutUp").toggleClass("slideInDown");
-            }
-        } else {
+        aStar = new AStarAlgorithm(configs);
+        game = new Game(lab, aStar, "arquivo");
+
+        $("#control-labyrinth").removeClass("slideInUp").addClass("slideOutDown");
+        setTimeout(function () {
+            $("div.div-absolute-control-labyrinth").css("z-index", -1)
+        }, 500);
+        $("#control-game").toggleClass("slideOutUp").toggleClass("slideInDown").removeClass("hide");
+    });
+
+    $("#continue").on("click", function () {
+        $(this).find("i").toggleClass("fa-play").toggleClass("fa-pause");
+        if ($(this).find("i").hasClass("fa-play")) {
             game.pause();
+        } else {
+            game.proceed();
         }
     });
 
@@ -130,15 +131,56 @@ var App = function() {
     }
 
     $("#controlStartPosition").on("click", function(){
-       $(this).addClass("active");
-        labBuilder.startPositionSelected();
+        if ($(this).hasClass("active")) {
+            deactivateAllControls();
+            labBuilder.noControlSelected();
+        } else {
+            deactivateAllControls();
+            $(this).addClass("active");
+            labBuilder.startPositionSelected();
+        }
+
+    });
+
+    $("#controlGoalPosition").on("click", function(){
+        if ($(this).hasClass("active")) {
+            deactivateAllControls();
+            labBuilder.noControlSelected();
+        } else {
+            deactivateAllControls();
+            $(this).addClass("active");
+            labBuilder.goalPositionSelected();
+        }
+
+    });
+
+    $("#controlBlock").on("click", function() {
+        if ($(this).hasClass("active")) {
+            deactivateAllControls();
+            labBuilder.noControlSelected();
+        } else {
+            deactivateAllControls();
+            $(this).addClass("active");
+            labBuilder.controlBlockSelected();
+        }
+    });
+
+    $("#controlErase").on("click", function() {
+        if ($(this).hasClass("active")) {
+            deactivateAllControls();
+            labBuilder.noControlSelected();
+        } else {
+            deactivateAllControls();
+            $(this).addClass("active");
+            labBuilder.controlEraseSelected();
+        }
     });
 
     $("#stop").on("click", function() {
         gameStop();
-        $("a[name='play']").find("i").addClass("fa-play").removeClass("fa-pause");
-        iniciar(labBuilder.getLabyrinth());
-        $("#control-labyrinth").toggleClass("slideInUp").toggleClass("slideOutDown");
+        $("#continue i").removeClass("fa-play").addClass("fa-pause");
+        iniciar(labBuilder.buildLabyrinth());
+        $("#control-labyrinth").removeClass("slideOutDown").addClass("slideInUp");
         $("div.div-absolute-control-labyrinth").css("z-index", 0);
         $("#control-game").toggleClass("slideOutUp").toggleClass("slideInDown");
     });
@@ -160,6 +202,18 @@ var App = function() {
             game.showGrade($("#chkGrade").prop("checked"));
         }
     });
+
+    function updateSettingsLabyrinthOnView(lab) {
+        $("#linhas").val(lab.rowCount);
+        $("#colunas").val(lab.colCount);
+        $("#pesoHorizontal").val(lab.horCost);
+        $("#pesoVertical").val(lab.verCost);
+        $("#pesoDiagonal").val(lab.diaCost);
+    }
+
+    function deactivateAllControls() {
+        $("div.control-labyrinth a.active").removeClass("active");
+    }
 
     function labyrinthFromFile(result) {
         var linesFile = result.split("\n");
@@ -195,7 +249,7 @@ var App = function() {
             map.push(rowMap);
         }
 
-        start.imgUrl = "assets/start.gif";
+        start.updateSprite(PositionSquareSprites.START);
         return new Labyrinth(rowCount, colCount, horCost, verCost, map, start, goal);
     }
 
@@ -222,7 +276,8 @@ var App = function() {
         "assets/comemorar.png",
         "assets/dead.gif",
         "assets/footprints.gif",
-        "assets/start.gif"
+        "assets/start.gif",
+        "assets/erase.png"
     ]);
     resources.onReady(iniciar);
 

@@ -80,7 +80,7 @@ var Game = function(labyrinth, aStar, nameFile) {
         isShowGrade = isShow;
     };
 
-    this.play = function() {
+    this.proceed = function() {
         isToPlay = true;
     };
 
@@ -134,7 +134,7 @@ var Game = function(labyrinth, aStar, nameFile) {
 
     function updatePlayer(dt) {
         if (checkIfPlayerIsOnSquare()) {
-            player.actualSquare = gameMove.squareTo;
+            player.square = gameMove.squareTo;
             var newSquare = aStar.next();
             if (newSquare != null) {
                 gameMove = new GameMove(newSquare);
@@ -158,6 +158,7 @@ var Game = function(labyrinth, aStar, nameFile) {
     }
 
     function movePlayer(dt) {
+        var oldPos = player.pos;
         var x = player.pos[0];
         var y = player.pos[1];
 
@@ -178,6 +179,7 @@ var Game = function(labyrinth, aStar, nameFile) {
         }
 
         player.updatePosition([x, y]);
+        player.updateSpriteMoviment(oldPos, [x, y]);
 
     }
 
@@ -245,12 +247,11 @@ var Game = function(labyrinth, aStar, nameFile) {
         goal.sprite.render(ctx);
         ctx.restore();
 
-        var startImg = resources.get(start.imgUrl);
-        var translate = [start.translate[0] + Math.abs(DimensionStart.width/2 - DimensionSquare/2),
-            start.translate[1] + Math.abs(DimensionStart.height/2 - DimensionSquare/2)];
+        var translate = start.translate;/*[start.pos[0] + Math.abs(DimensionStart.width/2 - DimensionSquare/2),
+            start.pos[1] + Math.abs(DimensionStart.height/2 - DimensionSquare/2)];*/
         ctx.save();
         ctx.translate(translate[0], translate[1]);
-        ctx.drawImage(startImg, 0, 0, DimensionStart.width, DimensionStart.height);
+        start.sprite.render(ctx);
         ctx.restore();
     }
 
@@ -260,7 +261,7 @@ var Game = function(labyrinth, aStar, nameFile) {
         $.each(wayToDraw, function(index, square) {
             if (!square.equals(start) && !square.equals(goal.square)) {
                 ctx.save();
-                var translate = square.translate;
+                var translate = square.pos;
                 translate = [translate[0] + Math.abs(DimensionFootPrint / 2 - DimensionSquare / 2),
                     translate[1] + Math.abs(DimensionFootPrint / 2 - DimensionSquare / 2)];
                 ctx.translate(translate[0], translate[1]);
@@ -302,7 +303,7 @@ var Game = function(labyrinth, aStar, nameFile) {
             if (player.pos[1] > value.center[1]) {
                 ctx.save();
                 ctx.translate(value.translate[0], value.translate[1]);
-                ctx.drawImage(resources.get(value.imgUrl), 0, 0, DimensionBarrier, DimensionBarrier);
+                value.sprite.render(ctx);
                 ctx.restore();
                 delete blockListCopy[key];
             }
@@ -314,13 +315,13 @@ var Game = function(labyrinth, aStar, nameFile) {
         $.each(blockListDown, function(key, value) {
             ctx.save();
             ctx.translate(value.translate[0], value.translate[1]);
-            ctx.drawImage(resources.get(value.imgUrl), 0, 0, DimensionBarrier, DimensionBarrier);
+            value.sprite.render(ctx);
             ctx.restore();
         });
     }
 
     function endGame() {
-        if (player.actualSquare.equals(goal.square)) {
+        if (player.square.equals(goal.square)) {
             player.updateSprite(PlayerSprites.VICTORY);
         } else {
             player.updateSprite(PlayerSprites.LOSE);
