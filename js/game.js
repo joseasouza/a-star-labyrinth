@@ -183,23 +183,13 @@ var Game = function(labyrinth, aStar, nameFile) {
 
     }
 
-    var opts = {
-        distance: 50,
-        lineWidth: 0.2,
-        gridColor: "#000000",
-        caption: false,
-        horizontalLines: true,
-        verticalLines: true
-    };
-
-    var grid = new Grid(opts);
-
+    var grid = new Grid(canvas, ctx, labyrinth.rowCount, labyrinth.colCount);
     function render() {
         ctx.fillStyle = texture;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         if (isShowGrade) {
-            grid.draw(ctx);
+            grid.drawGrid();
         }
         renderOpenNClosed();
         if (selectedSquare == null) {
@@ -344,8 +334,8 @@ var Game = function(labyrinth, aStar, nameFile) {
         $(canvas).hideBalloon();
         selectedSquare = null;
         var mousePos = getMousePos(canvas, evt);
-        var i = Math.floor(mousePos.y / DimensionSquare);
-        var j = Math.floor(mousePos.x / DimensionSquare);
+        var i = Math.floor((mousePos.y- Padding.top) / DimensionSquare);
+        var j = Math.floor((mousePos.x - Padding.left) / DimensionSquare);
         var selectedMove;
         $.each(openned, function(key, openMove) {
             if (openMove.square.index[0] == i && openMove.square.index[1] == j) {

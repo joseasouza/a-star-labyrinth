@@ -9,9 +9,8 @@
 var App = function() {
 
     var canvas = document.getElementById("canvas");
-    var minCanvasWidth = 25 * DimensionSquare;
-    var minCanvasHeight = 11 * DimensionSquare;
-    var grid;
+    var minCanvasWidth = 1240;
+    var minCanvasHeight =  535;
     var game;
     var aStar;
     var labBuilder;
@@ -22,13 +21,13 @@ var App = function() {
         if (oldLabyrinth == null) {
             var newLab =  emptyLabyrinth();
             setCanvasSize(newLab.rowCount, newLab.colCount);
-            labBuilder = new LabyrinthBuilder(grid, newLab);
+            labBuilder = new LabyrinthBuilder(newLab);
         } else {
-            labBuilder = new LabyrinthBuilder(grid, oldLabyrinth);
+            labBuilder = new LabyrinthBuilder(oldLabyrinth);
         }
 
         $(labBuilder).on("finishSelection", function() {
-            deactivateAllControls();
+            deactivateControls();
             //@TODO Refatorar e organizar
         });
     }
@@ -49,12 +48,12 @@ var App = function() {
             map.push(array);
         }
         //@TODO Colocar Peso diagonal
-        return new Labyrinth(linhas, colunas, horCost, verCost, map, null, null);
+        return new Labyrinth(linhas, colunas, horCost, verCost, diaCost, map, null, null);
     }
 
     $('#fileUpload').change(function(e) {
         if (game != null) {
-            gameStop();
+            $("#stop").trigger("click");
         }
         var file = this.files[0];
         var textType = /text.*/;
@@ -77,8 +76,8 @@ var App = function() {
 
     function setCanvasSize(rowCount, colCount) {
         var canvas = document.getElementById("canvas");
-        var canvasWidth = colCount * DimensionSquare ;
-        var canvasHeight = rowCount * DimensionSquare;
+        var canvasWidth = colCount * DimensionSquare + Padding.right + Padding.left ;
+        var canvasHeight = rowCount * DimensionSquare + Padding.top + Padding.bottom;
 
         if (minCanvasWidth > canvasWidth) canvasWidth = minCanvasWidth;
         if (minCanvasHeight > canvasHeight) canvasHeight = minCanvasHeight;
@@ -92,8 +91,14 @@ var App = function() {
     }
 
     $("#play").on("click", function () {
+        if(!labBuilder.isLabyrinthOk()) {
+            $("#modal-erro div[name='modal-message']").html("Você ainda não montou o labirinto corretamente! Verifique" +
+                " se você marcou as posições iniciais e finais!");
+            $("#modal-erro").modal('show');
+            return false;
+        }
+
         labBuilder.stop();
-        deactivateAllControls();
         var costs = {};
         costs[TypeMovement.VERTICAL] = Number($("#pesoVertical").val());
         costs[TypeMovement.HORIZONTAL] = Number($("#pesoHorizontal").val());
@@ -108,12 +113,8 @@ var App = function() {
 
         aStar = new AStarAlgorithm(configs);
         game = new Game(lab, aStar, "arquivo");
-
-        $("#control-labyrinth").removeClass("slideInUp").addClass("slideOutDown");
-        setTimeout(function () {
-            $("div.div-absolute-control-labyrinth").css("z-index", -1)
-        }, 500);
-        $("#control-game").toggleClass("slideOutUp").toggleClass("slideInDown").removeClass("hide");
+        deactivateControls();
+       disableLabyrinthBuildButtons();
     });
 
     $("#continue").on("click", function () {
@@ -132,10 +133,10 @@ var App = function() {
 
     $("#controlStartPosition").on("click", function(){
         if ($(this).hasClass("active")) {
-            deactivateAllControls();
+            deactivateControls();
             labBuilder.noControlSelected();
         } else {
-            deactivateAllControls();
+            deactivateControls();
             $(this).addClass("active");
             labBuilder.startPositionSelected();
         }
@@ -144,10 +145,10 @@ var App = function() {
 
     $("#controlGoalPosition").on("click", function(){
         if ($(this).hasClass("active")) {
-            deactivateAllControls();
+            deactivateControls();
             labBuilder.noControlSelected();
         } else {
-            deactivateAllControls();
+            deactivateControls();
             $(this).addClass("active");
             labBuilder.goalPositionSelected();
         }
@@ -156,10 +157,10 @@ var App = function() {
 
     $("#controlBlock").on("click", function() {
         if ($(this).hasClass("active")) {
-            deactivateAllControls();
+            deactivateControls();
             labBuilder.noControlSelected();
         } else {
-            deactivateAllControls();
+            deactivateControls();
             $(this).addClass("active");
             labBuilder.controlBlockSelected();
         }
@@ -167,10 +168,10 @@ var App = function() {
 
     $("#controlErase").on("click", function() {
         if ($(this).hasClass("active")) {
-            deactivateAllControls();
+            deactivateControls();
             labBuilder.noControlSelected();
         } else {
-            deactivateAllControls();
+            deactivateControls();
             $(this).addClass("active");
             labBuilder.controlEraseSelected();
         }
@@ -178,11 +179,8 @@ var App = function() {
 
     $("#stop").on("click", function() {
         gameStop();
-        $("#continue i").removeClass("fa-play").addClass("fa-pause");
         iniciar(labBuilder.buildLabyrinth());
-        $("#control-labyrinth").removeClass("slideOutDown").addClass("slideInUp");
-        $("div.div-absolute-control-labyrinth").css("z-index", 0);
-        $("#control-game").toggleClass("slideOutUp").toggleClass("slideInDown");
+        enableControls();
     });
 
     $("#chkAbertos").on("change", function() {
@@ -203,6 +201,16 @@ var App = function() {
         }
     });
 
+    $("#linhas, #colunas").on("change", function() {
+       //@TODO Refatorar nao utilizar game == null e sim verificar se o labirinto builder nao esta parado
+        if (game == null) {
+            var row = Number($("#linhas").val());
+            var col = Number($("#colunas").val());
+           labBuilder.updateRowColCount( row,  col, true);
+            setCanvasSize(row, col);
+       }
+    });
+
     function updateSettingsLabyrinthOnView(lab) {
         $("#linhas").val(lab.rowCount);
         $("#colunas").val(lab.colCount);
@@ -211,8 +219,26 @@ var App = function() {
         $("#pesoDiagonal").val(lab.diaCost);
     }
 
-    function deactivateAllControls() {
+    function deactivateControls() {
         $("div.control-labyrinth a.active").removeClass("active");
+    }
+
+    function disableLabyrinthBuildButtons() {
+        $("#control-labyrinth").removeClass("slideInUp").addClass("slideOutDown");
+        setTimeout(function () {
+            $("div.div-absolute-control-labyrinth").css("z-index", -1)
+        }, 500);
+        $("#control-game").toggleClass("slideOutUp").toggleClass("slideInDown").removeClass("hide");
+        $("#linhas, #colunas, #pesoHorizontal, #pesoVertical, #pesoDiagonal").prop("disabled", true);
+    }
+
+    function enableControls() {
+        $("#linhas, #colunas, #pesoHorizontal, #pesoVertical, #pesoDiagonal").prop("disabled", false);
+        $("#continue i").removeClass("fa-play").addClass("fa-pause");
+        $("#control-labyrinth").removeClass("slideOutDown").addClass("slideInUp");
+        $("div.div-absolute-control-labyrinth").css("z-index", 0);
+        $("#control-game").toggleClass("slideOutUp").toggleClass("slideInDown");
+
     }
 
     function labyrinthFromFile(result) {
@@ -227,7 +253,7 @@ var App = function() {
         var goal = [];
         var map = [];
 
-        var row, iRow, rowMap, type, square;
+        var row, iRow, rowMap;
         for (var i = 1; i < linesFile.length; i++) {
             row = linesFile[i].split(" ");
             iRow = i-1;
@@ -250,19 +276,8 @@ var App = function() {
         }
 
         start.updateSprite(PositionSquareSprites.START);
-        return new Labyrinth(rowCount, colCount, horCost, verCost, map, start, goal);
+        return new Labyrinth(rowCount, colCount, horCost, verCost, null, map, start, goal);
     }
-
-    var opts = {
-        distance: 50,
-        lineWidth: 0.2,
-        gridColor: "#000000",
-        caption: false,
-        horizontalLines: true,
-        verticalLines: true
-    };
-
-    grid = new Grid(opts);
 
     resources.load([
         'assets/textura.png',

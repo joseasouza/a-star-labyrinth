@@ -25,12 +25,24 @@
  * Define the entities used in application
  * @author dudevictor.github.io
  */
-var Labyrinth = function(rowCount, colCount, horCost, verCost, map, start, goal) {
+
+var DimensionSquare = 50;
+var DimensionBarrier = 56;
+var DimensionFootPrint = 32;
+var DimensionStart = {width:  21, height: 36};
+var Padding = {
+    top: 75,
+    right: 50,
+    bottom: 50,
+    left: 50
+};
+
+var Labyrinth = function(rowCount, colCount, horCost, verCost, diaCost, map, start, goal) {
     this.rowCount = rowCount;
     this.colCount = colCount;
     this.horCost = horCost;
     this.verCost = verCost;
-    this.diaCost = Math.sqrt(Math.pow(horCost, 2) + Math.pow(verCost, 2));
+    this.diaCost = diaCost == null? Math.sqrt(Math.pow(horCost, 2) + Math.pow(verCost, 2)) : diaCost;
     this.map = map;
     this.start = start;
     this.goal = goal;
@@ -46,11 +58,6 @@ var TypePosition = {
     array: ["ALLOWED", "BLOCKED", "START", "GOAL", "OPEN", "CLOSED"]
 };
 
-var DimensionSquare = 50;
-var DimensionBarrier = 56;
-var DimensionFootPrint = 32;
-var DimensionStart = {width:  21, height: 36};
-
 //@TODO Não é necessario utilizar translate, pois pos[] = translate[]
 //@TODO Definição confusa utilizar novo objeto Block
 var PositionSquareSprites = {
@@ -60,7 +67,7 @@ var PositionSquareSprites = {
         [DimensionBarrier, DimensionBarrier])
 };
 var PositionSquare = function(iRow, iCol, type) {
-    this.pos = [iCol * DimensionSquare, iRow * DimensionSquare];
+    this.pos = [Padding.left + iCol * DimensionSquare, Padding.top + iRow * DimensionSquare];
     this.center = [this.pos[0] + DimensionSquare/2, this.pos[1] + DimensionSquare/2];
     this.index = [iRow, iCol];
     this.type = type;

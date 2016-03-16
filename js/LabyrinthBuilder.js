@@ -6,7 +6,7 @@
  * @param labyrinth a instance of {@link Labyrinth}
  * @constructor it initializes the Game
  */
-var LabyrinthBuilder = function(grid, lab) {
+var LabyrinthBuilder = function(lab) {
     var canvas = document.getElementById("canvas");
     var ctx = canvas.getContext("2d");
     var gameTime = 0;
@@ -20,7 +20,9 @@ var LabyrinthBuilder = function(grid, lab) {
     var isMovingObject = false;
     var elementHover;
     var EraseSprite = new Sprite('assets/erase.png', [0, 0], [137, 273], 1, [0], null, null, [22, 40]);
-
+    var grid = new Grid(canvas, ctx, lab.rowCount, lab.colCount);
+    var rowCount;
+    var colCount;
     var mousePosition = {
         x: 0,
         y : 0
@@ -35,6 +37,22 @@ var LabyrinthBuilder = function(grid, lab) {
 
     var actualOptionSelected = OPTION_SELECTED.NONE;
 
+    this.updateRowColCount = function(newRowsCount, newColsCount, mustCheck) {
+
+        if (mustCheck) {
+            for (var i = 0; i < rowCount; i++) {
+                for (var j = 0; j < colCount; j++) {
+                    if (i >= newRowsCount || j >= newColsCount) {
+                        findAndRemoveElementOn(i, j);
+                    }
+                }
+            }
+        }
+
+        rowCount = newRowsCount;
+        colCount = newColsCount;
+        grid.updateGridSize(rowCount, colCount);
+    };
 
     this.stop = function() {
         $(canvas).unbind();
@@ -90,6 +108,10 @@ var LabyrinthBuilder = function(grid, lab) {
         elementHover.updateSprite(EraseSprite);
     };
 
+    this.isLabyrinthOk = function() {
+        return player != null && goal != null;
+    };
+
     this.buildLabyrinth = function() {
         var labyrinthConfigs = generateLabyrinthSettings();
         var rowCount = labyrinthConfigs.rowCount;
@@ -109,7 +131,7 @@ var LabyrinthBuilder = function(grid, lab) {
         });
 
         return new Labyrinth(rowCount, colCount, labyrinthConfigs.horCost, labyrinthConfigs.verCost,
-                            map, startSquare, goalSquare);
+            labyrinthConfigs.diaCost, map, startSquare, goalSquare);
     };
 
     //@TODO UTILITY JS
@@ -144,6 +166,7 @@ var LabyrinthBuilder = function(grid, lab) {
         if (lab.goal != null) {
             goal = new Goal(lab.goal);
         }
+        this.updateRowColCount(lab.rowCount, lab.colCount);
         play();
     };
 
@@ -200,7 +223,7 @@ var LabyrinthBuilder = function(grid, lab) {
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         if (isShowGrade) {
-            grid.draw(ctx);
+            grid.drawGrid(ctx);
         }
 
         if (goal != null) {
@@ -324,9 +347,9 @@ var LabyrinthBuilder = function(grid, lab) {
             }
 
         } else if (actualOptionSelected == OPTION_SELECTED.ERASE) {
-            findAndRemoveElementClicked(indexSquareHover.row, indexSquareHover.col);
-        } else if (actualOptionSelected == OPTION_SELECTED.NONE) {
-            elementHover = findAndRemoveElementClicked(indexSquareHover.row, indexSquareHover.col);
+            findAndRemoveElementOn(indexSquareHover.row, indexSquareHover.col);
+        } else if (actualOptionSelected == OPTION_SELECTED.NONE && !isMovingObject) {
+            elementHover = findAndRemoveElementOn(indexSquareHover.row, indexSquareHover.col);
             if (elementHover != null) {
                 isMovingObject = true;
             }
@@ -336,8 +359,8 @@ var LabyrinthBuilder = function(grid, lab) {
     });
 
     function findIndexSquareMouseHover() {
-        var i = Math.floor(mousePosition.y / DimensionSquare);
-        var j = Math.floor(mousePosition.x / DimensionSquare);
+        var i = Math.floor((mousePosition.y - Padding.top) / DimensionSquare);
+        var j = Math.floor((mousePosition.x - Padding.left) / DimensionSquare);
         return {
             row :  i,
             col : j
@@ -367,7 +390,7 @@ var LabyrinthBuilder = function(grid, lab) {
         return exists;
     }
 
-    function findAndRemoveElementClicked(row, col) {
+    function findAndRemoveElementOn(row, col) {
         var playerIndex = [], goalIndex = [];
         if (player != null) {
             playerIndex = player.square.index;
@@ -406,7 +429,11 @@ var LabyrinthBuilder = function(grid, lab) {
     }
 
     $(canvas).on('mousemove', function(e) {
-        mousePosition = getMousePos(canvas, e);
+        var newMousePosition =  getMousePos(canvas, e);
+        if (newMousePosition.x > Padding.left && newMousePosition.x < Padding.left + colCount*DimensionSquare
+            && newMousePosition.y > Padding.top && newMousePosition.y < Padding.top + rowCount*DimensionSquare) {
+            mousePosition = newMousePosition;
+        }
     });
 
     this.loadLabyrinth(lab);
