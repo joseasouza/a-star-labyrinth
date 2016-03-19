@@ -68,9 +68,24 @@
     width: 450px;
 }
 
+.anuncio {
+    width: 300px;
+    height: 600px;
+    right: 0px;
+    top: 75px;
+    background: transparent;
+    position: fixed;
+}
+
+@media (max-width: 1360px) {
+    .anuncio {
+        display: none;
+    }
+}
+
 .card {
     box-shadow: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23) !important;
-    width: 1240px;
+    width: 981px;
     height: 530px;
     background: #444444;
     overflow: visible;

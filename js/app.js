@@ -9,7 +9,7 @@
 var App = function() {
 
     var canvas = document.getElementById("canvas");
-    var minCanvasWidth = 1240;
+    var minCanvasWidth = 981;
     var minCanvasHeight =  535;
     var game;
     var aStar;
