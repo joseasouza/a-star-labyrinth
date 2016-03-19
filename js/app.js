@@ -211,6 +211,13 @@ var App = function() {
        }
     });
 
+    $("#pesoHorizontal, #pesoVertical").on("change", function() {
+        var pesoHorizontal = Number($("#pesoHorizontal").val());
+        var pesoVertical = Number($("#pesoVertical").val());
+        var pesoDiagonal = Math.sqrt(Math.pow(pesoHorizontal, 2) + Math.pow(pesoVertical, 2)).toFixed(2);;
+        $("#pesoDiagonal").val(pesoDiagonal);
+    });
+
     function updateSettingsLabyrinthOnView(lab) {
         $("#linhas").val(lab.rowCount);
         $("#colunas").val(lab.colCount);

@@ -65,8 +65,6 @@ var AStarAlgorithm = function(config) {
         var previousSquare = null;
         while(open.length > 0) {
             var current = open.dequeue();
-            //backIfCurrentIsNotNeighbor(previousSquare, current.square);
-            //cameFrom.push(current.square);
             pushClosed(current);
             if (current.square.equals(goal)) {
                 break;
@@ -141,35 +139,9 @@ var AStarAlgorithm = function(config) {
         return shouldAdd;
     }
 
-    /*function backIfCurrentIsNotNeighbor(previous, current) {
-        if (previous != null && !isNeighbor(previous, current)) {
-            for (var i = cameFrom.length -2; i >= 0; i--) {
-                var square = cameFrom[i];
-                cameFrom.push(square);
-                if (isNeighbor(square, current)) {
-                    break;
-                }
-            }
-        }
-    }*/
-
-    /*function isNeighbor(previous, current) {
-        var isNeighbor = false;
-        if (previous != null) {
-            for (var i = previous.index[0] - 1; i <= previous.index[0] + 1; i++) {
-                for (var j = previous.index[1] - 1; j <= previous.index[1] + 1; j++) {
-                    if (i == current.index[0] && j == current.index[1]) {
-                        isNeighbor = true;
-                    }
-                }
-            }
-        }
-        return isNeighbor;
-    }*/
-
     function calculateDistanceToGoal(square) {
-        var x = Math.pow(square.center[0] - goal.center[0], 2);
-        var y = Math.pow(square.center[1] - goal.center[1], 2);
+        var x = Math.pow(square.index[0] - goal.index[0], 2);
+        var y = Math.pow(square.index[1] - goal.index[1], 2);
         return Math.sqrt(x + y);
     }
 

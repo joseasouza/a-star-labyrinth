@@ -371,6 +371,7 @@ var Game = function(labyrinth, aStar, nameFile) {
                 $("#baloon").find("h5").html(selectedMove.type);
                 $("#baloon").find("label[name='cost']").html(selectedMove.cost.toFixed(2));
                 $("#baloon").find("label[name='distance']").html(selectedMove.distance.toFixed(2));
+                $("#baloon").find("label[name='priority']").html(selectedMove.priority.toFixed(2));
                 $(canvas).showBalloon({
                     position: balloonSets.position,
                     offsetX: balloonSets.x,
