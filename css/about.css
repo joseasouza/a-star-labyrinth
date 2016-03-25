@@ -1,0 +1,83 @@
+/*
+ * Copyright (c) 2016 - José Victor Alves de Souza - https://github.com/dudevictor/
+ */
+
+
+.app-container {
+    padding-bottom: 0px;
+}
+
+.app-container .content-container .side-menu:hover {
+    width: 60px;
+}
+
+.expanded .content-container .side-menu:hover {
+    width: 250px !important;
+}
+
+.app-container .content-container .side-menu:hover .navbar-nav li a .title {
+    display: block;
+}
+
+.expanded .content-container .side-menu:hover .navbar-nav li a .title {
+    display: inline-block;
+}
+
+.app-container.expanded .content-container .navbar-top {
+    padding-left: 250px;
+}
+
+.app-container.expanded .side-body {
+    margin-left: 75px;
+}
+
+.dropdown-toggle:hover {
+    color: #1ABC9C !important;
+}
+
+.flat-green .navbar.navbar-inverse .navbar-nav > li.open > a {
+    color: #1ABC9C !important;
+}
+
+.ufrn {
+    position: absolute;
+    bottom: 0px;
+    width: 250px;
+    overflow: hidden;
+}
+
+.ufrn img {
+    display: none;
+}
+
+a.highlight {
+    color: #1ABC9C;
+}
+
+p.links {
+    text-align: center;
+    font-size: 16px;
+}
+
+.links .fa {
+    -webkit-transition: 0.3s;
+    -moz-transition: 0.3s;
+    transition: 0.3s; }
+
+.links i {
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+.links .fa-facebook:hover {
+    color: #3B5998; }
+.links .fa-linkedin:hover {
+    color: #2b77b1; }
+.links .fa-google-plus:hover {
+    color: #c95644; }
+.links .fa-github-alt:hover {
+    color: #f6c2a4; }
+
+.expanded div.ufrn img {
+    display: inherit !important;
+}
